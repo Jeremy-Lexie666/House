@@ -1,0 +1,32 @@
+<view class="container">
+  <block wx:if="{{watchlist.length}}">
+    <block wx:for="{{watchlist}}" wx:key="id">
+      <view class="panel watch-card">
+        <view class="watch-name">{{item.communityName}}</view>
+        <view class="watch-summary">{{item.district}} · {{item.layout}}{{item.bathrooms}}</view>
+        <view class="watch-summary subtle">{{item.sourceLabel}}</view>
+        <view class="watch-summary subtle">{{item.syncHint}}</view>
+        <view class="watch-actions row between">
+          <view class="watch-update">最近刷新 {{item.updatedAt}}</view>
+          <view class="row watch-tools">
+            <view class="tool-button" bindtap="openEdit" data-id="{{item.id}}">编</view>
+            <view class="tool-button danger" bindtap="handleDelete" data-id="{{item.id}}">删</view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </block>
+  <view class="panel empty-state" wx:else>
+    <view>还没有关注条件，先加一条你最常看的小区组合吧。</view>
+    <button class="ghost-button empty-button" bindtap="openAdd">去添加</button>
+  </view>
+
+  <view class="bottom-bar">
+    <button class="manage-add-button" bindtap="openAdd">
+      <view class="manage-add-inner">
+        <text class="manage-add-plus">+</text>
+        <text>新增关注</text>
+      </view>
+    </button>
+  </view>
+</view>

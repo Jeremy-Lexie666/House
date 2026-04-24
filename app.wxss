@@ -1,0 +1,99 @@
+page {
+  background: #f3f4f6;
+  color: #111827;
+  font-family: "PingFang SC", "SF Pro Display", sans-serif;
+}
+
+.container {
+  min-height: 100vh;
+  padding: 28rpx 24rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.section {
+  margin-top: 24rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #111827;
+}
+
+.section-subtitle {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-sizing: border-box;
+  box-shadow: 0 10rpx 24rpx rgba(15, 23, 42, 0.04);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.between {
+  justify-content: space-between;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 22rpx;
+  line-height: 1;
+}
+
+.chip-warn {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.chip-muted {
+  background: #f3f4f6;
+  color: #667085;
+}
+
+.primary-button {
+  height: 84rpx;
+  border-radius: 18rpx;
+  background: #111827;
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 84rpx;
+}
+
+.ghost-button {
+  height: 72rpx;
+  border-radius: 18rpx;
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 26rpx;
+  line-height: 72rpx;
+}
+
+.empty-state {
+  padding: 48rpx 32rpx;
+  text-align: center;
+  color: #6b7280;
+  font-size: 26rpx;
+  line-height: 1.7;
+}

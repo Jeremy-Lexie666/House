@@ -1,0 +1,95 @@
+<view class="container">
+  <view class="panel form-panel">
+    <view class="field">
+      <view class="field-label">城市</view>
+      <view class="field-static">深圳</view>
+    </view>
+
+    <view class="field">
+      <view class="field-label">地区</view>
+      <picker range="{{districtOptions}}" value="{{districtIndex}}" bindchange="handleDistrictChange">
+        <view class="field-picker">{{district || '请选择地区'}}</view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <view class="field-label">小区名称</view>
+      <input
+        class="field-input"
+        value="{{communityName}}"
+        data-field="communityName"
+        bindinput="handleInput"
+        bindblur="hideCommunitySuggestions"
+        placeholder="输入小区名称后可模糊匹配"
+      />
+      <view class="suggestions-panel" wx:if="{{showCommunitySuggestions}}">
+        <view class="suggestions-empty" wx:if="{{communityLoading}}">正在匹配小区...</view>
+        <block wx:elif="{{communitySuggestions.length}}">
+          <block wx:for="{{communitySuggestions}}" wx:key="name">
+            <view
+              class="suggestion-item"
+              data-name="{{item.name}}"
+              data-district="{{item.district}}"
+              bindtap="selectCommunitySuggestion"
+            >
+              <view class="suggestion-name">{{item.name}}</view>
+              <view class="suggestion-district">{{item.district}}</view>
+            </view>
+          </block>
+        </block>
+        <view class="suggestions-empty" wx:else>没有找到匹配小区，可以继续手动输入</view>
+      </view>
+    </view>
+
+    <view class="field">
+      <view class="field-label">贝壳小区链接</view>
+      <input
+        class="field-input"
+        value="{{sourceUrl}}"
+        data-field="sourceUrl"
+        bindinput="handleInput"
+        placeholder="粘贴贝壳小区详情页链接，用于真实抓取"
+      />
+      <view class="field-help">支持粘贴贝壳小区详情页或小区在售列表链接，刷新时会优先抓真实房源。</view>
+    </view>
+
+    <view class="field">
+      <view class="field-label">房型</view>
+      <view class="option-grid option-grid-five">
+        <block wx:for="{{layoutOptions}}" wx:key="*this">
+          <view
+            class="option-chip {{layoutIndex === index ? 'option-chip-active' : ''}}"
+            data-index="{{index}}"
+            bindtap="handleLayoutChange"
+          >
+            {{item}}
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="field">
+      <view class="field-label">卫生间数量</view>
+      <view class="option-grid option-grid-three">
+        <block wx:for="{{bathroomOptions}}" wx:key="*this">
+          <view
+            class="option-chip {{bathroomIndex === index ? 'option-chip-active' : ''}}"
+            data-index="{{index}}"
+            bindtap="handleBathroomChange"
+          >
+            {{item}}
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="tips-box">
+      <view class="tips-line">• 保存后首页会先展示当前条件下的房源列表</view>
+      <view class="tips-line">• 填了贝壳小区链接后，刷新会优先抓取真实房源</view>
+    </view>
+  </view>
+
+  <view class="save-bar">
+    <button class="save-button" bindtap="submitForm">{{isEdit ? '保存修改' : '保存关注'}}</button>
+  </view>
+</view>

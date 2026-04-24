@@ -1,0 +1,79 @@
+<view class="container" wx:if="{{property}}">
+  <view class="detail-shell">
+  <view class="panel media-panel">
+    <swiper class="media-swiper" indicator-dots="true" autoplay="false" circular="true">
+      <block wx:for="{{property.mediaLabels}}" wx:key="*this">
+        <swiper-item>
+          <view class="media-card">
+            <view class="media-top row between">
+              <view class="media-badge">{{property.source}}</view>
+              <view class="media-count">{{index + 1}} / {{property.mediaLabels.length}}</view>
+            </view>
+            <view class="media-caption">{{item}}</view>
+          </view>
+        </swiper-item>
+      </block>
+    </swiper>
+  </view>
+
+  <view class="panel detail-panel">
+    <view class="detail-price-row">
+      <view class="detail-total">{{property.totalLabel}}</view>
+      <view class="detail-unit">{{property.unitLabel}}</view>
+    </view>
+    <view class="detail-drop" wx:if="{{property.reductionWan > 0}}">较上次抓取下降 {{property.reductionWan}} 万</view>
+    <view class="detail-title">{{property.title}}</view>
+    <view class="detail-info-line"><text class="detail-key">小区</text>{{property.communityName}}</view>
+    <view class="detail-info-line"><text class="detail-key">区域</text>{{property.district}}</view>
+    <view class="detail-info-line subtle"><text class="detail-key">更新时间</text>{{property.updatedAt}}</view>
+  </view>
+
+  <view class="panel info-panel">
+    <view class="section-caption">房源信息</view>
+    <view class="info-grid">
+      <view class="info-item">
+        <view class="info-label">户型</view>
+        <view class="info-value">{{property.layout}}{{property.bathrooms}}</view>
+      </view>
+      <view class="info-item">
+        <view class="info-label">卫生间</view>
+        <view class="info-value">{{property.bathrooms}}</view>
+      </view>
+      <view class="info-item">
+        <view class="info-label">面积</view>
+        <view class="info-value">{{property.areaLabel}}</view>
+      </view>
+      <view class="info-item">
+        <view class="info-label">楼层</view>
+        <view class="info-value">{{property.floor}}</view>
+      </view>
+      <view class="info-item">
+        <view class="info-label">朝向</view>
+        <view class="info-value">{{property.orientation}}</view>
+      </view>
+      <view class="info-item">
+        <view class="info-label">来源</view>
+        <view class="info-value">{{property.source}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel summary-panel">
+    <view class="section-caption">媒体信息</view>
+    <view class="summary-meta-row"><text class="detail-key">图片数量</text>{{property.imageCount}} 张</view>
+    <view class="summary-meta-row"><text class="detail-key">VR看房</text>{{property.hasVR ? '支持' : '不支持'}}</view>
+    <view class="summary-meta-row"><text class="detail-key">来源平台</text>{{property.source}}</view>
+    <view class="summary-meta-row subtle"><text class="detail-key">抓取时间</text>{{property.updatedAt}}</view>
+  </view>
+
+  <view class="action-bar">
+    <button class="detail-button detail-button-secondary" wx:if="{{property.hasVR}}" bindtap="copyVRLink">查看VR</button>
+    <button class="detail-button detail-button-primary" bindtap="copyLink">
+      <view class="detail-button-inner">
+        <text>查看原始房源</text>
+        <text class="detail-button-icon">↗</text>
+      </view>
+    </button>
+  </view>
+  </view>
+</view>

@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/property/detail",
+    "pages/manage/manage",
+    "pages/add/add"
+  ],
+  "window": {
+    "navigationBarTitleText": "深圳二手房观察",
+    "navigationBarBackgroundColor": "#F3F4F6",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F3F4F6",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

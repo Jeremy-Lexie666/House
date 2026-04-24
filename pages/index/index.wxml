@@ -1,0 +1,63 @@
+<view class="container">
+  <view class="sticky-shell">
+    <view class="header-card">
+      <view class="header-copy">
+        <view class="status-line">最近更新于 {{lastRefreshedAt}} · 共 {{propertyCount}} 套房源</view>
+      </view>
+      <view class="topbar-actions">
+        <view class="icon-button" bindtap="openManage">
+          <view class="button-stack">
+            <view class="button-icon">⚙</view>
+            <view class="button-label">设置</view>
+          </view>
+        </view>
+        <view class="icon-button {{refreshing ? 'icon-button-disabled' : ''}}" bindtap="handleRefresh">
+          <view class="button-stack">
+            <view class="button-icon refresh-icon">↻</view>
+            <view class="button-label">刷新</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="sort-row">
+      <view class="sort-icon">⇅</view>
+      <view class="sort-text">按总价从低到高</view>
+    </view>
+  </view>
+
+  <block wx:if="{{properties.length}}">
+    <block wx:for="{{properties}}" wx:key="id">
+      <view class="panel property-card" bindtap="openProperty" data-id="{{item.id}}">
+        <view class="row between property-card-top">
+          <view class="property-title">{{item.title}}</view>
+          <view class="property-source">{{item.source}}</view>
+        </view>
+
+        <view class="property-subtitle">{{item.subtitle}}</view>
+
+        <view class="property-price-row">
+          <view class="property-total">{{item.totalLabel}}</view>
+          <view class="property-unit">{{item.unitLabel}}</view>
+        </view>
+
+        <view class="property-meta">{{item.metaLine}}</view>
+
+        <view class="chip-row">
+          <block wx:for="{{item.tags}}" wx:key="*this">
+            <view class="chip {{item === '降价' ? 'chip-warn' : ''}}">{{item}}</view>
+          </block>
+        </view>
+
+        <view class="property-update">更新于 {{item.updateLabel}}</view>
+      </view>
+    </block>
+  </block>
+
+  <view class="empty-fill" wx:else>
+    <view class="panel empty-state">
+      <view class="empty-icon">🏡</view>
+      <view class="empty-title">尚未添加关注房源</view>
+      <button class="empty-action" bindtap="openAdd">添加关注</button>
+    </view>
+  </view>
+</view>
