@@ -31,6 +31,17 @@ NODE_ENV=production npm run start:prod
 
 In production mode, the server defaults to an empty store instead of writing demo watches and demo properties on first boot.
 
+If you want to keep the service running on a server, use:
+
+```bash
+pm2 start ecosystem.config.cjs --env production
+```
+
+Deployment notes:
+
+- [deploy/DEPLOYMENT.md](/Users/jeremy/Desktop/Vibe%20Coding/Codex/房子/deploy/DEPLOYMENT.md)
+- [deploy/nginx.house-watch.conf.example](/Users/jeremy/Desktop/Vibe%20Coding/Codex/房子/deploy/nginx.house-watch.conf.example)
+
 Endpoints:
 
 - `GET /health`

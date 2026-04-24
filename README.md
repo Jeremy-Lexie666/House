@@ -153,6 +153,18 @@ NODE_ENV=production npm run start:prod
 - `STORE_PATH`
 - `SEED_MODE`
 
+如果你准备用服务器常驻运行，项目里也已经带了：
+
+- [ecosystem.config.cjs](/Users/jeremy/Desktop/Vibe%20Coding/Codex/房子/ecosystem.config.cjs)
+- [deploy/DEPLOYMENT.md](/Users/jeremy/Desktop/Vibe%20Coding/Codex/房子/deploy/DEPLOYMENT.md)
+- [deploy/nginx.house-watch.conf.example](/Users/jeremy/Desktop/Vibe%20Coding/Codex/房子/deploy/nginx.house-watch.conf.example)
+
+推荐的生产托管方式：
+
+```bash
+pm2 start ecosystem.config.cjs --env production
+```
+
 ## 风险边界
 
 这个原型的产品方向是“只盯你手动关注的小区”。即便如此，后续真实采集也依然建议：
