@@ -5,11 +5,11 @@ const ENVIRONMENTS = {
   },
   trial: {
     label: "体验版",
-    apiBaseUrl: "https://your-api-domain.com",
+    apiBaseUrl: "https://api.4567l.com",
   },
   release: {
     label: "正式版",
-    apiBaseUrl: "https://your-api-domain.com",
+    apiBaseUrl: "https://api.4567l.com",
   },
 };
 
