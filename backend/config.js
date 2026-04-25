@@ -56,6 +56,9 @@ const config = {
   beikeBrowserSessionDir:
     process.env.BEIKE_BROWSER_SESSION_DIR ||
     path.join(__dirname, "data", "browser-session", "beike"),
+  beikeCookiesPath:
+    process.env.BEIKE_COOKIES_PATH ||
+    path.join(__dirname, "data", "browser-session", "beike-cookies.json"),
   beikeChromePath: resolveChromePath(),
 };
 

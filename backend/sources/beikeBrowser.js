@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const { chromium } = require("playwright-core");
 const { resolveChromePath } = require("../config");
 const {
@@ -31,6 +32,41 @@ async function launchBeikeContext(options = {}) {
     },
     args: ["--disable-blink-features=AutomationControlled"],
   });
+}
+
+function loadCookieFile(cookiesPath = "") {
+  if (!cookiesPath || !fs.existsSync(cookiesPath)) {
+    return [];
+  }
+
+  try {
+    const raw = fs.readFileSync(cookiesPath, "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn(`[beike-browser] failed to read cookie file: ${error.message}`);
+    return [];
+  }
+}
+
+async function applySessionCookies(context, options = {}) {
+  const cookies = [
+    ...(Array.isArray(options.cookies) ? options.cookies : []),
+    ...loadCookieFile(options.cookiesPath),
+  ];
+
+  if (!cookies.length) {
+    return;
+  }
+
+  await context.addCookies(
+    cookies
+      .filter((cookie) => cookie && cookie.name && cookie.value && cookie.domain)
+      .map((cookie) => ({
+        ...cookie,
+        sameSite: cookie.sameSite || "Lax",
+      })),
+  );
 }
 
 function getPrimaryPage(context) {
@@ -189,6 +225,7 @@ async function scrapeBeikeWatchWithBrowser(watchItem, now, options = {}) {
   const context = await launchBeikeContext(options);
 
   try {
+    await applySessionCookies(context, options);
     const page = await getPrimaryPage(context);
     await page.goto(communityUrl, {
       waitUntil: "domcontentloaded",
@@ -250,6 +287,7 @@ async function initBeikeBrowserSession(options = {}) {
   });
 
   try {
+    await applySessionCookies(context, options);
     const page = await getPrimaryPage(context);
     await page.goto(options.initialUrl || "https://sz.ke.com/", {
       waitUntil: "domcontentloaded",
@@ -267,5 +305,6 @@ async function initBeikeBrowserSession(options = {}) {
 
 module.exports = {
   initBeikeBrowserSession,
+  loadCookieFile,
   scrapeBeikeWatchWithBrowser,
 };

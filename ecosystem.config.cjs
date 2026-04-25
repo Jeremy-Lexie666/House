@@ -22,6 +22,7 @@ module.exports = {
         BEIKE_BROWSER_ENABLED: "true",
         BEIKE_BROWSER_HEADLESS: "false",
         BEIKE_BROWSER_SESSION_DIR: "./backend/data/browser-session/beike",
+        BEIKE_COOKIES_PATH: "./backend/data/browser-session/beike-cookies.json",
         BEIKE_CHROME_PATH: process.env.BEIKE_CHROME_PATH || "",
       },
       env_production: {
@@ -37,6 +38,7 @@ module.exports = {
         BEIKE_BROWSER_ENABLED: "true",
         BEIKE_BROWSER_HEADLESS: "true",
         BEIKE_BROWSER_SESSION_DIR: "./backend/data/browser-session/beike",
+        BEIKE_COOKIES_PATH: "./backend/data/browser-session/beike-cookies.json",
         BEIKE_CHROME_PATH: process.env.BEIKE_CHROME_PATH || "",
       },
     },
