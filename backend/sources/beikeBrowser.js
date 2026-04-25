@@ -1,5 +1,6 @@
 const path = require("path");
 const { chromium } = require("playwright-core");
+const { resolveChromePath } = require("../config");
 const {
   detectBlocked,
   detectLoginRequired,
@@ -10,8 +11,7 @@ const {
   toBeikeListingUrl,
 } = require("./beike");
 
-const DEFAULT_CHROME_PATH =
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const DEFAULT_CHROME_PATH = resolveChromePath();
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

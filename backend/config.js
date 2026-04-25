@@ -1,4 +1,14 @@
+const fs = require("fs");
 const path = require("path");
+
+const DEFAULT_CHROME_PATHS = [
+  process.env.BEIKE_CHROME_PATH,
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/usr/bin/google-chrome-stable",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium-browser",
+  "/snap/bin/chromium",
+].filter(Boolean);
 
 function toNumber(value, fallback) {
   const parsed = Number(value);
@@ -23,6 +33,11 @@ function toSeedMode(nodeEnv, explicitMode) {
   return "empty";
 }
 
+function resolveChromePath() {
+  const matchedPath = DEFAULT_CHROME_PATHS.find((candidate) => fs.existsSync(candidate));
+  return matchedPath || DEFAULT_CHROME_PATHS[0] || "";
+}
+
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 const config = {
@@ -41,11 +56,10 @@ const config = {
   beikeBrowserSessionDir:
     process.env.BEIKE_BROWSER_SESSION_DIR ||
     path.join(__dirname, "data", "browser-session", "beike"),
-  beikeChromePath:
-    process.env.BEIKE_CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  beikeChromePath: resolveChromePath(),
 };
 
 module.exports = {
   config,
+  resolveChromePath,
 };

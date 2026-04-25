@@ -211,7 +211,7 @@ backend/data/browser-session/beike
 - `BEIKE_BROWSER_ENABLED`
 - `BEIKE_BROWSER_HEADLESS`
 - `BEIKE_BROWSER_SESSION_DIR`
-- `BEIKE_CHROME_PATH`
+- `BEIKE_CHROME_PATH`（macOS 常见是 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`，Linux 常见是 `/usr/bin/google-chrome-stable`）
 
 默认开发环境会尝试启用这个登录态抓取方案，但它依旧不是完全稳定的长期方案；如果贝壳再次强制验证码或登录失效，页面会继续显示抓取失败。
 

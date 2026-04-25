@@ -22,7 +22,7 @@ module.exports = {
         BEIKE_BROWSER_ENABLED: "true",
         BEIKE_BROWSER_HEADLESS: "false",
         BEIKE_BROWSER_SESSION_DIR: "./backend/data/browser-session/beike",
-        BEIKE_CHROME_PATH: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        BEIKE_CHROME_PATH: process.env.BEIKE_CHROME_PATH || "",
       },
       env_production: {
         NODE_ENV: "production",
@@ -37,7 +37,7 @@ module.exports = {
         BEIKE_BROWSER_ENABLED: "true",
         BEIKE_BROWSER_HEADLESS: "true",
         BEIKE_BROWSER_SESSION_DIR: "./backend/data/browser-session/beike",
-        BEIKE_CHROME_PATH: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        BEIKE_CHROME_PATH: process.env.BEIKE_CHROME_PATH || "",
       },
     },
   ],

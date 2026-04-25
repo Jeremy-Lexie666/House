@@ -59,7 +59,7 @@ Relevant env vars:
 - `BEIKE_BROWSER_ENABLED`: enable browser fallback
 - `BEIKE_BROWSER_HEADLESS`: use headless browser for normal refreshes
 - `BEIKE_BROWSER_SESSION_DIR`: persistent browser profile path
-- `BEIKE_CHROME_PATH`: local Chrome executable path
+- `BEIKE_CHROME_PATH`: local Chrome executable path (`/Applications/Google Chrome.app/...` on macOS, `/usr/bin/google-chrome-stable` on Linux in common setups)
 
 Normal refresh flow becomes:
 
