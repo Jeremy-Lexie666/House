@@ -42,18 +42,6 @@
     </view>
 
     <view class="field">
-      <view class="field-label">贝壳小区链接</view>
-      <input
-        class="field-input"
-        value="{{sourceUrl}}"
-        data-field="sourceUrl"
-        bindinput="handleInput"
-        placeholder="粘贴贝壳小区详情页链接，用于真实抓取"
-      />
-      <view class="field-help">支持粘贴贝壳小区详情页或小区在售列表链接，刷新时会优先抓真实房源。</view>
-    </view>
-
-    <view class="field">
       <view class="field-label">房型</view>
       <view class="option-grid option-grid-five">
         <block wx:for="{{layoutOptions}}" wx:key="*this">
@@ -68,28 +56,19 @@
       </view>
     </view>
 
-    <view class="field">
-      <view class="field-label">卫生间数量</view>
-      <view class="option-grid option-grid-three">
-        <block wx:for="{{bathroomOptions}}" wx:key="*this">
-          <view
-            class="option-chip {{bathroomIndex === index ? 'option-chip-active' : ''}}"
-            data-index="{{index}}"
-            bindtap="handleBathroomChange"
-          >
-            {{item}}
-          </view>
-        </block>
-      </view>
-    </view>
-
     <view class="tips-box">
       <view class="tips-line">• 保存后首页会先展示当前条件下的房源列表</view>
-      <view class="tips-line">• 填了贝壳小区链接后，刷新会优先抓取真实房源</view>
+      <view class="tips-line">• 系统会根据小区和条件自动匹配并抓取最新房源</view>
     </view>
   </view>
 
   <view class="save-bar">
-    <button class="save-button" bindtap="submitForm">{{isEdit ? '保存修改' : '保存关注'}}</button>
+    <button
+      class="save-button {{formReady ? 'save-button-active' : 'save-button-disabled'}}"
+      bindtap="submitForm"
+      disabled="{{submitting || !formReady}}"
+    >
+      {{submitting ? '抓取中...' : (isEdit ? '保存修改' : '保存关注')}}
+    </button>
   </view>
 </view>

@@ -94,6 +94,27 @@
   font-size: 22rpx;
 }
 
+.detail-data-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 18rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.detail-data-badge-real {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.detail-data-badge-sample {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
 .detail-title {
   margin-top: 18rpx;
   font-size: 32rpx;

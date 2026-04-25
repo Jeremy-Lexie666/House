@@ -14,7 +14,7 @@
         <view class="icon-button {{refreshing ? 'icon-button-disabled' : ''}}" bindtap="handleRefresh">
           <view class="button-stack">
             <view class="button-icon refresh-icon">↻</view>
-            <view class="button-label">刷新</view>
+            <view class="button-label">{{refreshing ? '刷新中' : '刷新'}}</view>
           </view>
         </view>
       </view>
@@ -29,7 +29,10 @@
     <block wx:for="{{properties}}" wx:key="id">
       <view class="panel property-card" bindtap="openProperty" data-id="{{item.id}}">
         <view class="row between property-card-top">
-          <view class="property-title">{{item.title}}</view>
+          <view class="property-title-wrap">
+            <view class="property-title">{{item.displayTitle}}</view>
+            <view class="property-data-badge {{item.dataClassName}}">{{item.dataLabel}}</view>
+          </view>
           <view class="property-source">{{item.source}}</view>
         </view>
 
@@ -56,8 +59,9 @@
   <view class="empty-fill" wx:else>
     <view class="panel empty-state">
       <view class="empty-icon">🏡</view>
-      <view class="empty-title">尚未添加关注房源</view>
-      <button class="empty-action" bindtap="openAdd">添加关注</button>
+      <view class="empty-title">{{watchCount > 0 ? '暂未抓到真实房源' : '尚未添加关注房源'}}</view>
+      <view class="empty-desc" wx:if="{{watchCount > 0}}">当前关注条件下还没有抓到贝壳真实房源，可以稍后刷新或检查关注条件。</view>
+      <button class="empty-action" bindtap="handleEmptyAction">{{watchCount > 0 ? '管理关注' : '添加关注'}}</button>
     </view>
   </view>
 </view>

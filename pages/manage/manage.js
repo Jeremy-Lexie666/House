@@ -3,6 +3,7 @@ const { getWatchlist, removeWatchItem } = require("../../services/api");
 Page({
   data: {
     watchlist: [],
+    deletingId: "",
   },
 
   onShow() {
@@ -13,8 +14,23 @@ Page({
     try {
       const watchlist = (await getWatchlist()).map((item) => ({
         ...item,
-        summary: `${item.city} · ${item.district} · ${item.layout}${item.bathrooms}`,
-        sourceLabel: item.sourceType === "beike" ? "贝壳真实抓取" : "本地示例",
+        summary: `${item.city} · ${item.district} · ${item.layout}`,
+        syncLabel:
+          item.syncStatus === "success"
+            ? "已抓到真实房源"
+            : item.syncStatus === "empty"
+              ? "暂未抓到真实房源"
+              : item.syncStatus === "error"
+                ? "贝壳抓取失败"
+                : "等待抓取",
+        syncBadgeClass:
+          item.syncStatus === "success"
+            ? "watch-badge-success"
+            : item.syncStatus === "empty"
+              ? "watch-badge-warn"
+              : item.syncStatus === "error"
+                ? "watch-badge-error"
+                : "watch-badge-pending",
         syncHint:
           item.syncStatus === "success"
             ? `上次抓取 ${item.lastSyncedAt || item.updatedAt}`
@@ -22,9 +38,7 @@ Page({
               ? item.syncError || "暂未抓到符合条件的真实房源"
               : item.syncStatus === "error"
                 ? item.syncError || "真实抓取失败"
-                : item.sourceUrl
-                  ? "等待刷新抓取真实房源"
-                  : "未配置真实抓取链接",
+                : "等待自动抓取最新房源",
       }));
 
       this.setData({ watchlist });
@@ -51,6 +65,10 @@ Page({
 
   handleDelete(event) {
     const { id } = event.currentTarget.dataset;
+    if (this.data.deletingId) {
+      return;
+    }
+
     wx.showModal({
       title: "删除关注",
       content: "删除后首页将不再展示这条条件下的房源。",
@@ -58,6 +76,7 @@ Page({
         if (!confirm) {
           return;
         }
+        this.setData({ deletingId: id });
         removeWatchItem(id)
           .then(() => {
             this.loadData();
@@ -71,6 +90,9 @@ Page({
               title: "删除失败",
               icon: "none",
             });
+          })
+          .finally(() => {
+            this.setData({ deletingId: "" });
           });
       },
     });

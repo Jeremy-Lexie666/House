@@ -1,5 +1,6 @@
 const {
   createWatchItem,
+  getBaseUrl,
   getDistricts,
   getWatchItem,
   searchCommunities,
@@ -7,7 +8,6 @@ const {
 } = require("../../services/api");
 
 const layoutOptions = ["1房", "2房", "3房", "4房", "5房+"];
-const bathroomOptions = ["1卫", "2卫", "3卫+"];
 const fallbackDistrictOptions = ["南山", "福田", "宝安", "龙华区", "龙岗", "罗湖"];
 
 Page({
@@ -15,17 +15,16 @@ Page({
     id: "",
     district: "",
     communityName: "",
-    sourceUrl: "",
     layoutIndex: -1,
-    bathroomIndex: -1,
     layoutOptions,
-    bathroomOptions,
     districtOptions: fallbackDistrictOptions,
     districtIndex: -1,
     isEdit: false,
     communitySuggestions: [],
     showCommunitySuggestions: false,
     communityLoading: false,
+    submitting: false,
+    formReady: false,
   },
 
   async onLoad(options) {
@@ -40,12 +39,11 @@ Page({
             id: item.id,
             district: item.district,
             communityName: item.communityName,
-            sourceUrl: item.sourceUrl || "",
             layoutIndex: layoutOptions.indexOf(item.layout),
-            bathroomIndex: bathroomOptions.indexOf(item.bathrooms),
             districtIndex: districtOptions.indexOf(item.district),
             isEdit: true,
           });
+          this.syncFormReady();
         }
       } catch (error) {
         wx.showToast({
@@ -61,9 +59,23 @@ Page({
       const districtOptions = await getDistricts();
       if (districtOptions && districtOptions.length) {
         this.setData({ districtOptions });
+        this.syncFormReady();
       }
     } catch (error) {
       this.setData({ districtOptions: fallbackDistrictOptions });
+      this.syncFormReady();
+    }
+  },
+
+  syncFormReady() {
+    const { district, communityName, layoutIndex, bathroomIndex } = this.data;
+    const formReady = Boolean(
+      district &&
+        String(communityName || "").trim() &&
+        layoutIndex >= 0,
+    );
+    if (formReady !== this.data.formReady) {
+      this.setData({ formReady });
     }
   },
 
@@ -73,6 +85,7 @@ Page({
     this.setData({
       [field]: value,
     });
+    this.syncFormReady();
 
     if (field === "communityName") {
       const keyword = String(value || "").trim();
@@ -92,12 +105,7 @@ Page({
     this.setData({
       layoutIndex: Number(event.currentTarget.dataset.index),
     });
-  },
-
-  handleBathroomChange(event) {
-    this.setData({
-      bathroomIndex: Number(event.currentTarget.dataset.index),
-    });
+    this.syncFormReady();
   },
 
   handleDistrictChange(event) {
@@ -107,6 +115,7 @@ Page({
       districtIndex: index,
       district: districtOptions[index],
     });
+    this.syncFormReady();
   },
 
   async loadCommunitySuggestions(keyword = "") {
@@ -145,6 +154,7 @@ Page({
         showCommunitySuggestions: false,
         communityLoading: false,
       });
+      console.warn("Community suggestion request failed.", getBaseUrl(), error);
     }
   },
 
@@ -166,13 +176,17 @@ Page({
       communitySuggestions: [],
       showCommunitySuggestions: false,
     });
+    this.syncFormReady();
   },
 
   async submitForm() {
-    const { id, district, communityName, layoutIndex, bathroomIndex } = this.data;
-    const sourceUrl = String(this.data.sourceUrl || "").trim();
+    if (this.data.submitting || !this.data.formReady) {
+      return;
+    }
 
-    if (!district || !communityName.trim() || layoutIndex < 0 || bathroomIndex < 0) {
+    const { id, district, communityName, layoutIndex } = this.data;
+
+    if (!district || !communityName.trim() || layoutIndex < 0) {
       wx.showToast({
         title: "请填写完整关注条件",
         icon: "none",
@@ -184,12 +198,10 @@ Page({
       district,
       communityName: communityName.trim(),
       layout: layoutOptions[layoutIndex],
-      bathrooms: bathroomOptions[bathroomIndex],
-      sourceType: sourceUrl ? "beike" : "",
-      sourceUrl,
     };
 
     try {
+      this.setData({ submitting: true });
       if (id) {
         await updateWatchItem(id, payload);
       } else {
@@ -206,9 +218,11 @@ Page({
       }, 450);
     } catch (error) {
       wx.showToast({
-        title: "保存失败",
+        title: error.statusCode === 409 ? "这条关注已经存在" : "保存失败",
         icon: "none",
       });
+    } finally {
+      this.setData({ submitting: false });
     }
   },
 });

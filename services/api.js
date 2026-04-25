@@ -25,7 +25,12 @@ function request({ url, method = "GET", data }) {
           return;
         }
 
-        reject(new Error((payload && payload.error) || `Request failed with ${statusCode}`));
+        const error = new Error(
+          (payload && (payload.message || payload.error)) || `Request failed with ${statusCode}`,
+        );
+        error.statusCode = statusCode;
+        error.payload = payload;
+        reject(error);
       },
       fail: (error) => {
         reject(error);
@@ -114,6 +119,7 @@ function removeWatchItem(id) {
 
 module.exports = {
   createWatchItem,
+  getBaseUrl,
   getDistricts,
   getFeed,
   getProperty,

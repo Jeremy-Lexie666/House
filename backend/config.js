@@ -5,12 +5,22 @@ function toNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function toBoolean(value, fallback) {
+  if (value === "true") {
+    return true;
+  }
+  if (value === "false") {
+    return false;
+  }
+  return fallback;
+}
+
 function toSeedMode(nodeEnv, explicitMode) {
   if (explicitMode === "seed" || explicitMode === "empty") {
     return explicitMode;
   }
 
-  return nodeEnv === "production" ? "empty" : "seed";
+  return "empty";
 }
 
 const NODE_ENV = process.env.NODE_ENV || "development";
@@ -23,6 +33,17 @@ const config = {
   storePath:
     process.env.STORE_PATH || path.join(__dirname, "data", NODE_ENV === "production" ? "store.prod.json" : "store.json"),
   seedMode: toSeedMode(NODE_ENV, process.env.SEED_MODE),
+  autoRefreshEnabled: process.env.AUTO_REFRESH_ENABLED === "true",
+  autoRefreshHour: toNumber(process.env.AUTO_REFRESH_HOUR, 0),
+  autoRefreshMinute: toNumber(process.env.AUTO_REFRESH_MINUTE, 30),
+  beikeBrowserEnabled: toBoolean(process.env.BEIKE_BROWSER_ENABLED, NODE_ENV !== "production"),
+  beikeBrowserHeadless: toBoolean(process.env.BEIKE_BROWSER_HEADLESS, NODE_ENV === "production"),
+  beikeBrowserSessionDir:
+    process.env.BEIKE_BROWSER_SESSION_DIR ||
+    path.join(__dirname, "data", "browser-session", "beike"),
+  beikeChromePath:
+    process.env.BEIKE_CHROME_PATH ||
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 };
 
 module.exports = {

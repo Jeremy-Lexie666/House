@@ -24,6 +24,37 @@
   color: #9ca3af;
 }
 
+.watch-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.watch-badge-success {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.watch-badge-warn {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.watch-badge-error {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.watch-badge-pending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 .watch-actions {
   margin-top: 18rpx;
   padding-top: 18rpx;
@@ -49,6 +80,10 @@
 .tool-button.danger {
   background: #fff1f2;
   color: #e11d48;
+}
+
+.tool-button-disabled {
+  opacity: 0.6;
 }
 
 .bottom-bar {

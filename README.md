@@ -65,10 +65,10 @@ const MANUAL_ENV = "";
 
 ## 这版的数据说明
 
-- 当前房源数据来自 `data/mock.js`
-- 刷新按钮目前是模拟刷新流程，用来验证交互和列表更新
-- 新增或编辑的关注条件保存在本地缓存
-- 还没有接入真实抓取任务或后端数据库
+- 当前小程序已经走本地后端 API，不再依赖前端 mock 刷新
+- 新增或编辑的关注条件会写入后端 JSON 存储
+- 保存关注、手动刷新、夜间自动刷新会共用同一条贝壳抓取链路
+- 如果贝壳真实抓取失败，页面会保持空状态，不再补示例数据
 
 ## 下一步最值得接的部分
 
@@ -152,6 +152,24 @@ NODE_ENV=production npm run start:prod
 - `ALLOW_ORIGIN`
 - `STORE_PATH`
 - `SEED_MODE`
+- `AUTO_REFRESH_ENABLED`
+- `AUTO_REFRESH_HOUR`
+- `AUTO_REFRESH_MINUTE`
+
+如果你希望后端每天凌晨自动抓一次最新房源，生产环境建议开启：
+
+```bash
+AUTO_REFRESH_ENABLED=true
+AUTO_REFRESH_HOUR=0
+AUTO_REFRESH_MINUTE=30
+```
+
+当前这版已经支持：
+
+- 用户保存关注条件时不再手填贝壳小区链接
+- 后端刷新时自动根据 `小区 + 区域` 去贝壳搜索建议接口解析小区页
+- 手动点击刷新和自动定时刷新共用同一条抓取链路
+- 当纯 HTTP 请求撞上贝壳验证码时，可选回退到本地 Chrome 浏览器会话抓取
 
 如果你准备用服务器常驻运行，项目里也已经带了：
 
@@ -164,6 +182,38 @@ NODE_ENV=production npm run start:prod
 ```bash
 pm2 start ecosystem.config.cjs --env production
 ```
+
+## 贝壳浏览器会话抓取
+
+贝壳公开页现在会不稳定地把服务器请求重定向到验证码页，所以项目里加了一条更重但更有机会的兜底链路：
+
+1. 先用本机 Chrome 建立一次可复用的贝壳登录会话
+2. 保存关注 / 点击刷新时，后端先匿名解析小区链接
+3. 真正抓在售房源列表时，直接复用 Playwright + Chrome 持久会话
+
+第一次使用前，先执行：
+
+```bash
+npm install
+npm run beike:login
+```
+
+执行后会打开本机 Chrome。你需要在浏览器里完成贝壳登录和人机验证，成功后会把会话信息保存到：
+
+```text
+backend/data/browser-session/beike
+```
+
+后续再刷新时，后端会尝试复用这个会话。
+
+相关环境变量：
+
+- `BEIKE_BROWSER_ENABLED`
+- `BEIKE_BROWSER_HEADLESS`
+- `BEIKE_BROWSER_SESSION_DIR`
+- `BEIKE_CHROME_PATH`
+
+默认开发环境会尝试启用这个登录态抓取方案，但它依旧不是完全稳定的长期方案；如果贝壳再次强制验证码或登录失效，页面会继续显示抓取失败。
 
 ## 风险边界
 

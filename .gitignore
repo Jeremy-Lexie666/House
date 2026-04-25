@@ -21,6 +21,7 @@ Figma/exported/node_modules/
 # Runtime data
 backend/data/store.json
 backend/data/store.prod.json
+backend/data/browser-session/
 
 # WeChat DevTools private config
 project.private.config.json

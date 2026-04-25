@@ -13,6 +13,7 @@ const {
 const { loadState, saveState } = require("./store");
 const { getDistrictOptions, searchCommunities } = require("../data/communityCatalog");
 const { refreshStateWithSources, inferSourceType } = require("./refreshSources");
+const { startAutoRefresh } = require("./autoRefresh");
 
 function loadHydratedState() {
   const nextState = ensureWatchCoverage(loadState());
@@ -56,7 +57,7 @@ function notFound(res) {
 }
 
 function validateWatchPayload(payload) {
-  return Boolean(payload.district && payload.communityName && payload.layout && payload.bathrooms);
+  return Boolean(payload.district && payload.communityName && payload.layout);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -115,10 +116,12 @@ const server = http.createServer(async (req, res) => {
       }
       const result = upsertWatchItem(loadState(), {
         ...body,
-        sourceType: body.sourceType || inferSourceType(body.sourceUrl),
+        sourceType: body.sourceType || inferSourceType(body.sourceUrl) || "beike",
       });
-      saveState(result.state);
-      sendJson(res, 201, result.item);
+      const refreshedState = await refreshStateWithSources(result.state);
+      saveState(refreshedState);
+      const refreshedItem = getWatchItem(refreshedState, result.item.id) || result.item;
+      sendJson(res, 201, refreshedItem);
       return;
     }
 
@@ -147,11 +150,13 @@ const server = http.createServer(async (req, res) => {
         }
         const result = upsertWatchItem(loadState(), {
           ...body,
-          sourceType: body.sourceType || inferSourceType(body.sourceUrl),
+          sourceType: body.sourceType || inferSourceType(body.sourceUrl) || "beike",
           id,
         });
-        saveState(result.state);
-        sendJson(res, 200, result.item);
+        const refreshedState = await refreshStateWithSources(result.state);
+        saveState(refreshedState);
+        const refreshedItem = getWatchItem(refreshedState, result.item.id) || result.item;
+        sendJson(res, 200, refreshedItem);
         return;
       }
 
@@ -176,6 +181,13 @@ const server = http.createServer(async (req, res) => {
 
     notFound(res);
   } catch (error) {
+    if (error.code === "DUPLICATE_WATCH") {
+      sendJson(res, 409, {
+        error: "Duplicate Watch",
+        message: error.message,
+      });
+      return;
+    }
     sendJson(res, 500, {
       error: "Internal Server Error",
       message: error.message,
@@ -185,4 +197,10 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(config.port, config.host, () => {
   console.log(`House watch API listening on http://${config.host}:${config.port}`);
+});
+
+startAutoRefresh({
+  enabled: config.autoRefreshEnabled,
+  hour: config.autoRefreshHour,
+  minute: config.autoRefreshMinute,
 });

@@ -1,4 +1,4 @@
-const { getFeed, refreshFeed } = require("../../services/api");
+const { getBaseUrl, getFeed, refreshFeed } = require("../../services/api");
 const {
   formatArea,
   formatCurrencyWan,
@@ -7,14 +7,19 @@ const {
 } = require("../../utils/format");
 
 function mapProperty(property) {
+  const isSample = Boolean(property.generated);
+
   return {
     ...property,
+    displayTitle: property.communityName,
     totalLabel: formatCurrencyWan(property.totalPriceWan),
     unitLabel: formatUnitPrice(property.unitPrice),
     areaLabel: formatArea(property.area),
     updateLabel: getRelativeLabel(property.updatedAt),
-    metaLine: `${property.layout}${property.bathrooms} · ${formatArea(property.area)} · ${property.floor} · ${property.orientation}`,
-    subtitle: `${property.communityName} · ${property.district}`,
+    metaLine: `${property.layout} · ${formatArea(property.area)} · ${property.floor} · ${property.orientation}`,
+    subtitle: property.district,
+    dataLabel: isSample ? "示例数据" : "真实抓取",
+    dataClassName: isSample ? "property-data-badge-sample" : "property-data-badge-real",
   };
 }
 
@@ -23,6 +28,7 @@ Page({
     city: "深圳",
     lastRefreshedAt: "",
     refreshLabel: "",
+    watchCount: 0,
     propertyCount: 0,
     properties: [],
     refreshing: false,
@@ -39,18 +45,24 @@ Page({
         city: feed.city,
         lastRefreshedAt: feed.lastRefreshedAt,
         refreshLabel: getRelativeLabel(feed.lastRefreshedAt),
+        watchCount: feed.watchlist.length,
         propertyCount: feed.properties.length,
         properties: feed.properties.map(mapProperty),
       });
     } catch (error) {
       wx.showToast({
-        title: "请先启动本地API",
+        title: "无法连接本地API",
         icon: "none",
       });
+      console.warn("Feed request failed.", getBaseUrl(), error);
     }
   },
 
   async handleRefresh() {
+    if (this.data.refreshing) {
+      return;
+    }
+
     this.setData({ refreshing: true });
     wx.showLoading({
       title: "刷新中",
@@ -63,6 +75,7 @@ Page({
         city: feed.city,
         lastRefreshedAt: feed.lastRefreshedAt,
         refreshLabel: getRelativeLabel(feed.lastRefreshedAt),
+        watchCount: feed.watchlist.length,
         propertyCount: feed.properties.length,
         properties: feed.properties.map(mapProperty),
       });
@@ -75,6 +88,7 @@ Page({
         title: "刷新失败",
         icon: "none",
       });
+      console.warn("Refresh request failed.", getBaseUrl(), error);
     } finally {
       wx.hideLoading();
       this.setData({ refreshing: false });
@@ -91,6 +105,14 @@ Page({
     wx.navigateTo({
       url: "/pages/add/add",
     });
+  },
+
+  handleEmptyAction() {
+    if (this.data.watchCount > 0) {
+      this.openManage();
+      return;
+    }
+    this.openAdd();
   },
 
   openProperty(event) {

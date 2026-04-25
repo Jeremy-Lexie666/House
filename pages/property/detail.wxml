@@ -21,8 +21,9 @@
       <view class="detail-total">{{property.totalLabel}}</view>
       <view class="detail-unit">{{property.unitLabel}}</view>
     </view>
+    <view class="detail-data-badge {{property.dataClassName}}">{{property.dataLabel}}</view>
     <view class="detail-drop" wx:if="{{property.reductionWan > 0}}">较上次抓取下降 {{property.reductionWan}} 万</view>
-    <view class="detail-title">{{property.title}}</view>
+    <view class="detail-title">{{property.displayTitle}}</view>
     <view class="detail-info-line"><text class="detail-key">小区</text>{{property.communityName}}</view>
     <view class="detail-info-line"><text class="detail-key">区域</text>{{property.district}}</view>
     <view class="detail-info-line subtle"><text class="detail-key">更新时间</text>{{property.updatedAt}}</view>
@@ -33,11 +34,7 @@
     <view class="info-grid">
       <view class="info-item">
         <view class="info-label">户型</view>
-        <view class="info-value">{{property.layout}}{{property.bathrooms}}</view>
-      </view>
-      <view class="info-item">
-        <view class="info-label">卫生间</view>
-        <view class="info-value">{{property.bathrooms}}</view>
+        <view class="info-value">{{property.layout}}</view>
       </view>
       <view class="info-item">
         <view class="info-label">面积</view>
@@ -63,14 +60,15 @@
     <view class="summary-meta-row"><text class="detail-key">图片数量</text>{{property.imageCount}} 张</view>
     <view class="summary-meta-row"><text class="detail-key">VR看房</text>{{property.hasVR ? '支持' : '不支持'}}</view>
     <view class="summary-meta-row"><text class="detail-key">来源平台</text>{{property.source}}</view>
+    <view class="summary-meta-row"><text class="detail-key">数据类型</text>{{property.dataLabel}}</view>
     <view class="summary-meta-row subtle"><text class="detail-key">抓取时间</text>{{property.updatedAt}}</view>
   </view>
 
   <view class="action-bar">
-    <button class="detail-button detail-button-secondary" wx:if="{{property.hasVR}}" bindtap="copyVRLink">查看VR</button>
+    <button class="detail-button detail-button-secondary" wx:if="{{property.hasVR}}" bindtap="copyVRLink">复制VR链接</button>
     <button class="detail-button detail-button-primary" bindtap="copyLink">
       <view class="detail-button-inner">
-        <text>查看原始房源</text>
+        <text>复制原始链接</text>
         <text class="detail-button-icon">↗</text>
       </view>
     </button>

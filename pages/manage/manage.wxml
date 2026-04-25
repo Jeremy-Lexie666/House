@@ -3,14 +3,16 @@
     <block wx:for="{{watchlist}}" wx:key="id">
       <view class="panel watch-card">
         <view class="watch-name">{{item.communityName}}</view>
-        <view class="watch-summary">{{item.district}} · {{item.layout}}{{item.bathrooms}}</view>
-        <view class="watch-summary subtle">{{item.sourceLabel}}</view>
+        <view class="watch-summary">{{item.district}} · {{item.layout}}</view>
+        <view class="watch-badge {{item.syncBadgeClass}}">{{item.syncLabel}}</view>
         <view class="watch-summary subtle">{{item.syncHint}}</view>
         <view class="watch-actions row between">
           <view class="watch-update">最近刷新 {{item.updatedAt}}</view>
           <view class="row watch-tools">
             <view class="tool-button" bindtap="openEdit" data-id="{{item.id}}">编</view>
-            <view class="tool-button danger" bindtap="handleDelete" data-id="{{item.id}}">删</view>
+            <view class="tool-button danger {{deletingId === item.id ? 'tool-button-disabled' : ''}}" bindtap="handleDelete" data-id="{{item.id}}">
+              {{deletingId === item.id ? '...' : '删'}}
+            </view>
           </view>
         </view>
       </view>

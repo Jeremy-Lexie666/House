@@ -1,5 +1,7 @@
+const { config } = require("./config");
 const { formatNow, refreshState } = require("../shared/houseDomain");
-const { scrapeBeikeWatch } = require("./sources/beike");
+const { resolveBeikeCommunityUrl, scrapeBeikeWatch } = require("./sources/beike");
+const { scrapeBeikeWatchWithBrowser } = require("./sources/beikeBrowser");
 
 function inferSourceType(sourceUrl = "") {
   if (/ke\.com/.test(sourceUrl)) {
@@ -31,19 +33,30 @@ async function refreshStateWithSources(state) {
   const now = formatNow();
 
   for (const watchItem of nextState.watchlist) {
-    const sourceType = watchItem.sourceType || inferSourceType(watchItem.sourceUrl);
-    if (!watchItem.sourceUrl || sourceType !== "beike") {
+    const sourceType = watchItem.sourceType || inferSourceType(watchItem.sourceUrl) || "beike";
+    if (sourceType !== "beike") {
       continue;
     }
 
     try {
-      const result = await scrapeBeikeWatch(
-        {
-          ...watchItem,
-          sourceType,
-        },
-        now,
-      );
+      const sourceUrl = watchItem.sourceUrl || (await resolveBeikeCommunityUrl(watchItem));
+      const baseWatchItem = {
+        ...watchItem,
+        sourceType,
+        sourceUrl,
+      };
+      let result;
+
+      if (config.beikeBrowserEnabled) {
+        result = await scrapeBeikeWatchWithBrowser(baseWatchItem, now, {
+          headless: config.beikeBrowserHeadless,
+          userDataDir: config.beikeBrowserSessionDir,
+          executablePath: config.beikeChromePath,
+          allowInteractiveCaptcha: false,
+        });
+      } else {
+        result = await scrapeBeikeWatch(baseWatchItem, now);
+      }
 
       clearWatchProperties(nextState, watchItem.id);
 
@@ -53,7 +66,7 @@ async function refreshStateWithSources(state) {
 
       updateWatchSyncMeta(nextState, watchItem.id, {
         sourceType,
-        sourceUrl: watchItem.sourceUrl,
+        sourceUrl,
         syncStatus: result.properties.length ? "success" : "empty",
         syncError: result.properties.length
           ? ""
@@ -66,7 +79,7 @@ async function refreshStateWithSources(state) {
     } catch (error) {
       updateWatchSyncMeta(nextState, watchItem.id, {
         sourceType,
-        sourceUrl: watchItem.sourceUrl,
+        sourceUrl: watchItem.sourceUrl || "",
         syncStatus: "error",
         syncError: error.message,
         lastSyncedAt: now,
