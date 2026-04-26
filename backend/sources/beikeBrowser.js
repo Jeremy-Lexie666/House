@@ -453,7 +453,7 @@ async function scrapeBeikePropertyMediaWithBrowser(property, options = {}) {
       window.scrollTo(0, Math.min(window.innerHeight * 2, document.body.scrollHeight));
     });
 
-    return extractDetailMedia(page);
+    return await extractDetailMedia(page);
   } finally {
     await session.close();
   }
