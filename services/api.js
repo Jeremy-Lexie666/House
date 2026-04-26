@@ -11,13 +11,21 @@ function getBaseUrl() {
   return normalizeBaseUrl((app && app.globalData && app.globalData.apiBaseUrl) || DEFAULT_BASE_URL);
 }
 
-function request({ url, method = "GET", data }) {
+function getClientId() {
+  const app = typeof getApp === "function" ? getApp() : null;
+  return (app && app.globalData && app.globalData.clientId) || "";
+}
+
+function request({ url, method = "GET", data, timeout = 10000 }) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${getBaseUrl()}${url}`,
       method,
       data,
-      timeout: 10000,
+      timeout,
+      header: {
+        "X-House-Watch-Client-Id": getClientId(),
+      },
       success: (response) => {
         const { statusCode, data: payload } = response;
         if (statusCode >= 200 && statusCode < 300) {
@@ -55,6 +63,7 @@ function refreshFeed() {
   return request({
     url: "/api/refresh",
     method: "POST",
+    timeout: 60000,
   });
 }
 
@@ -99,6 +108,7 @@ function createWatchItem(data) {
     url: "/api/watchlist",
     method: "POST",
     data,
+    timeout: 60000,
   });
 }
 
@@ -107,6 +117,7 @@ function updateWatchItem(id, data) {
     url: `/api/watchlist/${id}`,
     method: "PUT",
     data,
+    timeout: 60000,
   });
 }
 

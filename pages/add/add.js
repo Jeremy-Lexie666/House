@@ -214,7 +214,13 @@ Page({
       });
 
       setTimeout(() => {
-        wx.navigateBack();
+        if (this.data.isEdit) {
+          wx.navigateBack();
+          return;
+        }
+        wx.reLaunch({
+          url: "/pages/index/index",
+        });
       }, 450);
     } catch (error) {
       wx.showToast({

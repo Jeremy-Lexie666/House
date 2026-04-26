@@ -32,6 +32,7 @@ Page({
     propertyCount: 0,
     properties: [],
     refreshing: false,
+    loading: true,
   },
 
   onShow() {
@@ -39,6 +40,7 @@ Page({
   },
 
   async loadData() {
+    this.setData({ loading: true });
     try {
       const feed = await getFeed();
       this.setData({
@@ -51,10 +53,12 @@ Page({
       });
     } catch (error) {
       wx.showToast({
-        title: "无法连接本地API",
+        title: "无法连接服务",
         icon: "none",
       });
       console.warn("Feed request failed.", getBaseUrl(), error);
+    } finally {
+      this.setData({ loading: false });
     }
   },
 

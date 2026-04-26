@@ -8,6 +8,7 @@ const {
   getPropertyDetail,
   getWatchItem,
   getWatchlist,
+  migrateLegacyOwnership,
   upsertWatchItem,
 } = require("../shared/houseDomain");
 const { loadState, saveState } = require("./store");
@@ -15,8 +16,14 @@ const { getDistrictOptions, searchCommunities } = require("../data/communityCata
 const { refreshStateWithSources, inferSourceType } = require("./refreshSources");
 const { startAutoRefresh } = require("./autoRefresh");
 
-function loadHydratedState() {
-  const nextState = ensureWatchCoverage(loadState());
+function resolveClientId(req) {
+  return String(req.headers["x-house-watch-client-id"] || "").trim();
+}
+
+function loadHydratedState(clientId = "") {
+  const hydrated = ensureWatchCoverage(loadState());
+  const migration = migrateLegacyOwnership(hydrated, clientId);
+  const nextState = ensureWatchCoverage(migration.state);
   saveState(nextState);
   return nextState;
 }
@@ -26,7 +33,7 @@ function sendJson(res, statusCode, payload) {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": config.allowOrigin,
     "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-House-Watch-Client-Id",
   });
   res.end(JSON.stringify(payload));
 }
@@ -68,6 +75,7 @@ const server = http.createServer(async (req, res) => {
 
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const { pathname } = requestUrl;
+  const clientId = resolveClientId(req);
 
   try {
     if (req.method === "GET" && pathname === "/health") {
@@ -79,19 +87,19 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && pathname === "/api/feed") {
-      sendJson(res, 200, getHomeFeed(loadHydratedState()));
+      sendJson(res, 200, getHomeFeed(loadHydratedState(clientId), clientId));
       return;
     }
 
     if (req.method === "POST" && pathname === "/api/refresh") {
-      const nextState = await refreshStateWithSources(loadHydratedState());
+      const nextState = await refreshStateWithSources(loadHydratedState(clientId), clientId);
       saveState(nextState);
-      sendJson(res, 200, getHomeFeed(nextState));
+      sendJson(res, 200, getHomeFeed(nextState, clientId));
       return;
     }
 
     if (req.method === "GET" && pathname === "/api/watchlist") {
-      sendJson(res, 200, getWatchlist(loadHydratedState()));
+      sendJson(res, 200, getWatchlist(loadHydratedState(clientId), clientId));
       return;
     }
 
@@ -114,13 +122,14 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 400, { error: "Missing required watch fields." });
         return;
       }
-      const result = upsertWatchItem(loadState(), {
+      const baseState = loadHydratedState(clientId);
+      const result = upsertWatchItem(baseState, {
         ...body,
         sourceType: body.sourceType || inferSourceType(body.sourceUrl) || "beike",
-      });
-      const refreshedState = await refreshStateWithSources(result.state);
+      }, clientId);
+      const refreshedState = await refreshStateWithSources(result.state, clientId);
       saveState(refreshedState);
-      const refreshedItem = getWatchItem(refreshedState, result.item.id) || result.item;
+      const refreshedItem = getWatchItem(refreshedState, result.item.id, clientId) || result.item;
       sendJson(res, 201, refreshedItem);
       return;
     }
@@ -133,7 +142,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (req.method === "GET") {
-        const item = getWatchItem(loadHydratedState(), id);
+        const item = getWatchItem(loadHydratedState(clientId), id, clientId);
         if (!item) {
           notFound(res);
           return;
@@ -148,20 +157,21 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 400, { error: "Missing required watch fields." });
           return;
         }
-        const result = upsertWatchItem(loadState(), {
+        const baseState = loadHydratedState(clientId);
+        const result = upsertWatchItem(baseState, {
           ...body,
           sourceType: body.sourceType || inferSourceType(body.sourceUrl) || "beike",
           id,
-        });
-        const refreshedState = await refreshStateWithSources(result.state);
+        }, clientId);
+        const refreshedState = await refreshStateWithSources(result.state, clientId);
         saveState(refreshedState);
-        const refreshedItem = getWatchItem(refreshedState, result.item.id) || result.item;
+        const refreshedItem = getWatchItem(refreshedState, result.item.id, clientId) || result.item;
         sendJson(res, 200, refreshedItem);
         return;
       }
 
       if (req.method === "DELETE") {
-        const nextState = deleteWatchItem(loadState(), id);
+        const nextState = deleteWatchItem(loadHydratedState(clientId), id, clientId);
         saveState(nextState);
         sendJson(res, 200, { success: true });
         return;
@@ -170,7 +180,7 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/api/property/") && req.method === "GET") {
       const id = pathname.replace("/api/property/", "");
-      const property = getPropertyDetail(loadHydratedState(), id);
+      const property = getPropertyDetail(loadHydratedState(clientId), id, clientId);
       if (!property) {
         notFound(res);
         return;

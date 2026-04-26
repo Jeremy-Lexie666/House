@@ -216,6 +216,13 @@
   min-height: 0;
 }
 
+.loading-fill {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.loading-state,
 .empty-state {
   flex: 1;
   margin-top: 12rpx;
@@ -227,11 +234,21 @@
   box-sizing: border-box;
 }
 
+.loading-spinner {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  border: 6rpx solid rgba(37, 99, 235, 0.16);
+  border-top-color: #2563eb;
+  animation: spin 0.9s linear infinite;
+}
+
 .empty-icon {
   font-size: 76rpx;
   line-height: 1;
 }
 
+.loading-title,
 .empty-title {
   margin-top: 20rpx;
   font-size: 30rpx;
@@ -240,6 +257,7 @@
   text-align: center;
 }
 
+.loading-desc,
 .empty-desc {
   margin-top: 12rpx;
   font-size: 22rpx;
@@ -266,4 +284,14 @@
 
 .empty-action::after {
   border: none;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

@@ -25,7 +25,15 @@
     </view>
   </view>
 
-  <block wx:if="{{properties.length}}">
+  <view class="loading-fill" wx:if="{{loading && !properties.length}}">
+    <view class="panel loading-state">
+      <view class="loading-spinner"></view>
+      <view class="loading-title">正在加载房源数据</view>
+      <view class="loading-desc">请稍候，系统正在同步当前关注条件下的最新房源。</view>
+    </view>
+  </view>
+
+  <block wx:elif="{{properties.length}}">
     <block wx:for="{{properties}}" wx:key="id">
       <view class="panel property-card" bindtap="openProperty" data-id="{{item.id}}">
         <view class="row between property-card-top">

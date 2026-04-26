@@ -10,8 +10,29 @@ function normalizeDistrict(value = "") {
   return normalizeText(value).replace(/区$/, "");
 }
 
+function normalizeClientId(value = "") {
+  return String(value || "").trim();
+}
+
+function watchBelongsToClient(watchItem, clientId = "") {
+  const normalizedClientId = normalizeClientId(clientId);
+  if (!normalizedClientId) {
+    return true;
+  }
+  return normalizeClientId(watchItem && watchItem.clientId) === normalizedClientId;
+}
+
+function propertyBelongsToClient(property, clientId = "") {
+  const normalizedClientId = normalizeClientId(clientId);
+  if (!normalizedClientId) {
+    return true;
+  }
+  return normalizeClientId(property && property.clientId) === normalizedClientId;
+}
+
 function getWatchSignature(watchItem = {}) {
   return [
+    normalizeClientId(watchItem.clientId),
     normalizeDistrict(watchItem.district),
     normalizeText(watchItem.communityName),
     normalizeText(watchItem.layout),
@@ -20,6 +41,7 @@ function getWatchSignature(watchItem = {}) {
 
 function getPropertySignature(property = {}) {
   return [
+    normalizeClientId(property.clientId),
     property.watchId || "",
     property.listingCode || property.detailUrl || property.id || "",
     normalizeText(property.communityName),
@@ -41,6 +63,14 @@ function formatNow() {
 
 function propertyBelongsToWatch(property, watchItem) {
   if (!property || !watchItem) {
+    return false;
+  }
+
+  if (
+    watchItem.clientId &&
+    property.clientId &&
+    normalizeClientId(property.clientId) !== normalizeClientId(watchItem.clientId)
+  ) {
     return false;
   }
 
@@ -71,6 +101,14 @@ function isLooseMatchedProperty(property, watchItem) {
   }
 
   if (property.watchId || property.generatedWatchId) {
+    return false;
+  }
+
+  if (
+    watchItem.clientId &&
+    property.clientId &&
+    normalizeClientId(property.clientId) !== normalizeClientId(watchItem.clientId)
+  ) {
     return false;
   }
 
@@ -139,10 +177,52 @@ function ensureWatchCoverage(state) {
   return nextState;
 }
 
-function getMatchedProperties(state) {
+function migrateLegacyOwnership(state, clientId = "") {
+  const normalizedClientId = normalizeClientId(clientId);
+  if (!normalizedClientId) {
+    return { state, changed: false };
+  }
+
+  const hasOwnedWatch = state.watchlist.some((item) => normalizeClientId(item.clientId) === normalizedClientId);
+  if (hasOwnedWatch) {
+    return { state, changed: false };
+  }
+
+  let changed = false;
+  const nextState = clone(state);
+
+  nextState.watchlist = nextState.watchlist.map((item) => {
+    if (item.clientId) {
+      return item;
+    }
+    changed = true;
+    return {
+      ...item,
+      clientId: normalizedClientId,
+    };
+  });
+
+  nextState.properties = nextState.properties.map((item) => {
+    if (item.clientId) {
+      return item;
+    }
+    changed = true;
+    return {
+      ...item,
+      clientId: normalizedClientId,
+    };
+  });
+
+  return {
+    state: changed ? nextState : state,
+    changed,
+  };
+}
+
+function getMatchedProperties(state, clientId = "") {
   const seen = new Set();
   return state.properties
-    .filter((property) => property.watchId && !property.generated)
+    .filter((property) => property.watchId && !property.generated && propertyBelongsToClient(property, clientId))
     .filter((property) => {
       const signature = [
         property.listingCode || property.detailUrl || property.id,
@@ -157,26 +237,44 @@ function getMatchedProperties(state) {
     .sort((a, b) => a.totalPriceWan - b.totalPriceWan);
 }
 
-function getHomeFeed(state) {
+function getClientLastRefreshedAt(state, clientId = "") {
+  const lastSyncedAtList = state.watchlist
+    .filter((item) => watchBelongsToClient(item, clientId) && item.lastSyncedAt)
+    .map((item) => item.lastSyncedAt)
+    .sort();
+
+  return lastSyncedAtList.length ? lastSyncedAtList[lastSyncedAtList.length - 1] : state.lastRefreshedAt || "";
+}
+
+function getHomeFeed(state, clientId = "") {
   return {
     city: "深圳",
-    lastRefreshedAt: state.lastRefreshedAt,
-    watchlist: [...state.watchlist].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
-    properties: getMatchedProperties(state),
+    lastRefreshedAt: getClientLastRefreshedAt(state, clientId),
+    watchlist: [...state.watchlist]
+      .filter((item) => watchBelongsToClient(item, clientId))
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
+    properties: getMatchedProperties(state, clientId),
   };
 }
 
-function getPropertyDetail(state, id) {
-  const property = state.properties.find((item) => item.id === id);
+function getPropertyDetail(state, id, clientId = "") {
+  const property = state.properties.find((item) => item.id === id && propertyBelongsToClient(item, clientId));
   if (!property) {
     return null;
   }
 
   const related = state.properties
-    .filter((item) => item.id !== id && item.communityName === property.communityName && item.layout === property.layout)
+    .filter(
+      (item) =>
+        item.id !== id &&
+        propertyBelongsToClient(item, clientId) &&
+        item.communityName === property.communityName &&
+        item.layout === property.layout,
+    )
     .sort((a, b) => a.totalPriceWan - b.totalPriceWan)
     .slice(0, 2);
-  const watchItem = state.watchlist.find((item) => propertyBelongsToWatch(property, item)) || null;
+  const watchItem =
+    state.watchlist.find((item) => watchBelongsToClient(item, clientId) && propertyBelongsToWatch(property, item)) || null;
 
   return {
     ...property,
@@ -185,23 +283,33 @@ function getPropertyDetail(state, id) {
   };
 }
 
-function getWatchlist(state) {
-  return [...state.watchlist].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+function getWatchlist(state, clientId = "") {
+  return [...state.watchlist]
+    .filter((item) => watchBelongsToClient(item, clientId))
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
 
-function getWatchItem(state, id) {
-  return state.watchlist.find((item) => item.id === id) || null;
+function getWatchItem(state, id, clientId = "") {
+  return state.watchlist.find((item) => item.id === id && watchBelongsToClient(item, clientId)) || null;
 }
 
-function findDuplicateWatch(state, payload) {
+function findDuplicateWatch(state, payload, clientId = "") {
   const targetSignature = getWatchSignature(payload);
-  return state.watchlist.find((item) => item.id !== payload.id && getWatchSignature(item) === targetSignature) || null;
+  return (
+    state.watchlist.find(
+      (item) =>
+        watchBelongsToClient(item, clientId) &&
+        item.id !== payload.id &&
+        getWatchSignature(item) === targetSignature,
+    ) || null
+  );
 }
 
-function upsertWatchItem(state, payload) {
+function upsertWatchItem(state, payload, clientId = "") {
   const now = formatNow();
   const nextItem = {
     id: payload.id || `watch-${Date.now()}`,
+    clientId: normalizeClientId(clientId),
     city: "深圳",
     district: payload.district,
     communityName: payload.communityName,
@@ -217,21 +325,25 @@ function upsertWatchItem(state, payload) {
   };
 
   const nextState = dedupeState(state);
-  const duplicate = findDuplicateWatch(nextState, nextItem);
+  const duplicate = findDuplicateWatch(nextState, nextItem, clientId);
   if (duplicate) {
     const error = new Error("已存在相同的关注条件");
     error.code = "DUPLICATE_WATCH";
     throw error;
   }
 
-  const index = nextState.watchlist.findIndex((item) => item.id === nextItem.id);
+  const index = nextState.watchlist.findIndex(
+    (item) => item.id === nextItem.id && watchBelongsToClient(item, clientId),
+  );
   if (index >= 0) {
     nextState.watchlist.splice(index, 1, nextItem);
   } else {
     nextState.watchlist.unshift(nextItem);
   }
 
-  nextState.properties = nextState.properties.filter((property) => !isLooseMatchedProperty(property, nextItem));
+  nextState.properties = nextState.properties.filter(
+    (property) => !propertyBelongsToClient(property, clientId) || !isLooseMatchedProperty(property, nextItem),
+  );
 
   const hydratedState = ensureWatchCoverage(nextState);
 
@@ -241,11 +353,17 @@ function upsertWatchItem(state, payload) {
   };
 }
 
-function deleteWatchItem(state, id) {
+function deleteWatchItem(state, id, clientId = "") {
   const nextState = clone(state);
-  nextState.watchlist = nextState.watchlist.filter((item) => item.id !== id);
+  nextState.watchlist = nextState.watchlist.filter(
+    (item) => !(item.id === id && watchBelongsToClient(item, clientId)),
+  );
   nextState.properties = nextState.properties.filter(
-    (item) => item.generatedWatchId !== id && item.watchId !== id,
+    (item) =>
+      !(
+        propertyBelongsToClient(item, clientId) &&
+        (item.generatedWatchId === id || item.watchId === id)
+      ),
   );
   return nextState;
 }
@@ -272,6 +390,9 @@ module.exports = {
   getWatchlist,
   isLooseMatchedProperty,
   matchesWatchItem,
+  migrateLegacyOwnership,
+  propertyBelongsToClient,
   refreshState,
   upsertWatchItem,
+  watchBelongsToClient,
 };

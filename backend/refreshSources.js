@@ -1,5 +1,5 @@
 const { config } = require("./config");
-const { formatNow, refreshState } = require("../shared/houseDomain");
+const { formatNow, refreshState, watchBelongsToClient } = require("../shared/houseDomain");
 const { resolveBeikeCommunityUrl, scrapeBeikeWatch } = require("./sources/beike");
 const { scrapeBeikeWatchWithBrowser } = require("./sources/beikeBrowser");
 
@@ -28,11 +28,11 @@ function updateWatchSyncMeta(state, watchId, patch) {
   });
 }
 
-async function refreshStateWithSources(state) {
+async function refreshStateWithSources(state, clientId = "") {
   const nextState = refreshState(state);
   const now = formatNow();
 
-  for (const watchItem of nextState.watchlist) {
+  for (const watchItem of nextState.watchlist.filter((item) => watchBelongsToClient(item, clientId))) {
     const sourceType = watchItem.sourceType || inferSourceType(watchItem.sourceUrl) || "beike";
     if (sourceType !== "beike") {
       continue;

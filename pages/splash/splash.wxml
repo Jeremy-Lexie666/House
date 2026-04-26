@@ -1,0 +1,112 @@
+<view class="splash-page">
+  <view class="splash-grid"></view>
+  <view class="splash-aurora splash-aurora-left"></view>
+  <view class="splash-aurora splash-aurora-right"></view>
+  <view class="splash-arc splash-arc-outer"></view>
+  <view class="splash-arc splash-arc-inner"></view>
+
+  <view class="dashboard dashboard-left dashboard-top">
+    <view class="dashboard-title">市场趋势</view>
+    <view class="chart chart-line">
+      <view class="chart-line-grid"></view>
+      <view class="chart-line-path"></view>
+      <view class="chart-bars">
+        <view class="bar bar-1"></view>
+        <view class="bar bar-2"></view>
+        <view class="bar bar-3"></view>
+        <view class="bar bar-4"></view>
+        <view class="bar bar-5"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="dashboard dashboard-left dashboard-bottom">
+    <view class="dashboard-title">房产数据</view>
+    <view class="chart chart-ring">
+      <view class="ring">
+        <view class="ring-inner">
+          <text class="ring-value">78%</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="dashboard dashboard-right dashboard-top">
+    <view class="dashboard-title">区域分析</view>
+    <view class="chart chart-map">
+      <view class="map-shape"></view>
+      <view class="map-point map-point-1"></view>
+      <view class="map-point map-point-2"></view>
+      <view class="map-point map-point-3"></view>
+    </view>
+  </view>
+
+  <view class="dashboard dashboard-right dashboard-bottom">
+    <view class="dashboard-title">价格走势</view>
+    <view class="chart chart-bars-mini">
+      <view class="bars-mini">
+        <view class="mini-bar mini-bar-1"></view>
+        <view class="mini-bar mini-bar-2"></view>
+        <view class="mini-bar mini-bar-3"></view>
+        <view class="mini-bar mini-bar-4"></view>
+        <view class="mini-bar mini-bar-5"></view>
+        <view class="mini-bar mini-bar-6"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="brand-block">
+    <view class="logo-wrap">
+      <view class="logo-house">
+        <view class="logo-window logo-window-1"></view>
+        <view class="logo-window logo-window-2"></view>
+        <view class="logo-window logo-window-3"></view>
+        <view class="logo-window logo-window-4"></view>
+        <view class="logo-bar logo-bar-1"></view>
+        <view class="logo-bar logo-bar-2"></view>
+        <view class="logo-bar logo-bar-3"></view>
+      </view>
+    </view>
+    <view class="brand-title">房有数</view>
+    <view class="brand-subtitle">
+      <view class="subtitle-line"></view>
+      <text class="subtitle-text">数据・洞察・决策</text>
+      <view class="subtitle-line"></view>
+    </view>
+    <view class="brand-caption">让房产数据更有价值</view>
+  </view>
+
+  <view class="city-stage">
+    <view class="beam beam-1"></view>
+    <view class="beam beam-2"></view>
+    <view class="beam beam-3"></view>
+    <view class="beam beam-4"></view>
+    <view class="beam beam-5"></view>
+    <view class="beam beam-6"></view>
+
+    <view class="cityline">
+      <view class="building building-1"></view>
+      <view class="building building-2"></view>
+      <view class="building building-3"></view>
+      <view class="building building-4"></view>
+      <view class="building building-5"></view>
+      <view class="building building-6"></view>
+      <view class="building building-7"></view>
+      <view class="building building-8"></view>
+      <view class="building building-9"></view>
+      <view class="building building-10"></view>
+    </view>
+
+    <view class="platform platform-outer"></view>
+    <view class="platform platform-middle"></view>
+    <view class="platform platform-inner"></view>
+  </view>
+
+  <view class="loading-block">
+    <view class="loading-text">正在加载房有数...</view>
+    <view class="progress-track">
+      <view class="progress-fill" style="{{progressStyle}}"></view>
+      <view class="progress-glow"></view>
+    </view>
+  </view>
+</view>

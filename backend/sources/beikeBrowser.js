@@ -163,6 +163,7 @@ function mapBrowserProperty(item, watchItem, now, communityUrl, listingUrl) {
   return {
     id: `beike-${listingCode || `${watchItem.id}-${item.totalPriceWan}-${area}`}`,
     watchId: watchItem.id,
+    clientId: watchItem.clientId || "",
     generated: false,
     communityName: watchItem.communityName,
     district: watchItem.district,

@@ -13,7 +13,7 @@ const ENVIRONMENTS = {
   },
 };
 
-const MANUAL_ENV = "develop";
+const MANUAL_ENV = "";
 
 function getMiniProgramEnvVersion() {
   try {

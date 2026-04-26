@@ -227,6 +227,7 @@ function mapBeikeProperty(item, watchItem, abstract, now) {
   return {
     id: `beike-${item.houseCode || item.id || `${watchItem.id}-${totalPriceWan}-${area}`}`,
     watchId: watchItem.id,
+    clientId: watchItem.clientId || "",
     generated: false,
     communityName: abstract.name || watchItem.communityName,
     district,
