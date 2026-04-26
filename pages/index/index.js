@@ -69,7 +69,7 @@ Page({
 
     this.setData({ refreshing: true });
     wx.showLoading({
-      title: "刷新中",
+      title: "房源抓取中，请耐心等待",
       mask: true,
     });
 

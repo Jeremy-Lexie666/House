@@ -380,6 +380,37 @@ async function waitForAccessReady(page, timeoutMs = 180000) {
   return false;
 }
 
+function normalizePageUrl(url = "") {
+  return String(url || "").replace(/#.*$/, "");
+}
+
+async function findReusableListingPage(context, listingUrl) {
+  const pages = context.pages();
+  const normalizedListingUrl = normalizePageUrl(listingUrl);
+
+  for (const page of pages) {
+    try {
+      if (!page.isClosed() && normalizePageUrl(page.url()) === normalizedListingUrl) {
+        return page;
+      }
+    } catch (error) {
+      // Ignore pages that are in the middle of closing/navigation.
+    }
+  }
+
+  for (const page of pages) {
+    try {
+      if (!page.isClosed() && /ke\.com\/ershoufang\/c\d+\//.test(page.url())) {
+        return page;
+      }
+    } catch (error) {
+      // Ignore pages that are in the middle of closing/navigation.
+    }
+  }
+
+  return null;
+}
+
 async function scrapeBeikeWatchWithBrowser(watchItem, now, options = {}) {
   const sourceUrl = watchItem.sourceUrl || (await resolveBeikeCommunityUrl(watchItem));
   const communityUrl = normalizeBeikeCommunityUrl(sourceUrl);
@@ -389,33 +420,23 @@ async function scrapeBeikeWatchWithBrowser(watchItem, now, options = {}) {
 
   try {
     await applySessionCookies(context, options);
-    const page = await getPrimaryPage(context);
-    await page.goto(communityUrl, {
-      waitUntil: "domcontentloaded",
-      timeout: options.timeoutMs || 30000,
-    });
+    const page = (await findReusableListingPage(context, listingUrl)) || (await getPrimaryPage(context));
 
-    let html = await page.content();
-    if (detectBlocked(html) || /hip\.ke\.com\/captcha/.test(page.url())) {
-      if (!options.allowInteractiveCaptcha) {
-        throw new Error("贝壳浏览器会话仍需验证码，请先执行 beike:login 完成人工验证");
-      }
+    let html = "";
+    const isReusableListingPage = normalizePageUrl(page.url()) === normalizePageUrl(listingUrl);
 
-      const passed = await waitForAccessReady(page, options.captchaTimeoutMs || 180000);
-      if (!passed) {
-        throw new Error("人工验证码超时，未能建立可复用的贝壳浏览器会话");
-      }
-      html = await page.content();
+    if (!isReusableListingPage) {
+      await page.goto(listingUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: options.timeoutMs || 30000,
+      });
     }
 
-    await page.goto(listingUrl, {
-      waitUntil: "domcontentloaded",
-      timeout: options.timeoutMs || 30000,
-    });
     html = await page.content();
-    if (detectLoginRequired(page.url(), html)) {
+
+    if (detectBlocked(html) || /hip\.ke\.com\/captcha/.test(page.url()) || detectLoginRequired(page.url(), html)) {
       if (!options.allowInteractiveCaptcha) {
-        throw new Error("贝壳在售列表页需要登录，请先执行 beike:login 并在 Chrome 中完成登录");
+        throw new Error("贝壳浏览器会话仍需验证码，请先执行 beike:login 完成人工验证");
       }
 
       const passed = await waitForAccessReady(page, options.captchaTimeoutMs || 180000);
@@ -424,6 +445,7 @@ async function scrapeBeikeWatchWithBrowser(watchItem, now, options = {}) {
       }
       html = await page.content();
     }
+
     const listItems = await extractListingCards(page);
     const expectedLayout = watchItem.layout;
     const properties = listItems

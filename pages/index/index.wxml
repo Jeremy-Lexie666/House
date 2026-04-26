@@ -14,7 +14,7 @@
         <view class="icon-button {{refreshing ? 'icon-button-disabled' : ''}}" bindtap="handleRefresh">
           <view class="button-stack">
             <view class="button-icon refresh-icon">↻</view>
-            <view class="button-label">{{refreshing ? '刷新中' : '刷新'}}</view>
+            <view class="button-label">{{refreshing ? '抓取中' : '刷新'}}</view>
           </view>
         </view>
       </view>

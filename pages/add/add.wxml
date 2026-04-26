@@ -68,7 +68,7 @@
       bindtap="submitForm"
       disabled="{{submitting || !formReady}}"
     >
-      {{submitting ? '抓取中...' : (isEdit ? '保存修改' : '保存关注')}}
+      {{submitting ? '房源抓取中，请耐心等待' : (isEdit ? '保存修改' : '保存关注')}}
     </button>
   </view>
 </view>
