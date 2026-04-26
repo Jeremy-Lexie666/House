@@ -15,6 +15,7 @@ const { loadState, saveState } = require("./store");
 const { getDistrictOptions, searchCommunities } = require("../data/communityCatalog");
 const { refreshStateWithSources, inferSourceType } = require("./refreshSources");
 const { startAutoRefresh } = require("./autoRefresh");
+const { scrapeBeikePropertyMediaWithBrowser } = require("./sources/beikeBrowser");
 
 function resolveClientId(req) {
   return String(req.headers["x-house-watch-client-id"] || "").trim();
@@ -65,6 +66,14 @@ function notFound(res) {
 
 function validateWatchPayload(payload) {
   return Boolean(payload.district && payload.communityName && payload.layout);
+}
+
+function hasUsableMedia(property) {
+  return Boolean(
+    property &&
+      Array.isArray(property.mediaImages) &&
+      property.mediaImages.some((url) => url && !/blank\.gif/i.test(url)),
+  );
 }
 
 const server = http.createServer(async (req, res) => {
@@ -180,11 +189,46 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/api/property/") && req.method === "GET") {
       const id = pathname.replace("/api/property/", "");
-      const property = getPropertyDetail(loadHydratedState(clientId), id, clientId);
+      let state = loadHydratedState(clientId);
+      let property = getPropertyDetail(state, id, clientId);
       if (!property) {
         notFound(res);
         return;
       }
+
+      if (property.source === "贝壳" && property.detailUrl && !hasUsableMedia(property)) {
+        try {
+          const media = await scrapeBeikePropertyMediaWithBrowser(property, {
+            cdpUrl: config.beikeBrowserCdpUrl,
+            cookiesPath: config.beikeCookiesPath,
+            userDataDir: config.beikeBrowserSessionDir,
+            executablePath: config.beikeChromePath,
+            headless: config.beikeBrowserHeadless,
+          });
+
+          if (media.imageCount > 0 || media.vrUrl) {
+            state = {
+              ...state,
+              properties: state.properties.map((item) =>
+                item.id === id
+                  ? {
+                      ...item,
+                      mediaImages: media.imageCount ? media.mediaImages : item.mediaImages,
+                      imageCount: media.imageCount || item.imageCount || 0,
+                      hasVR: media.hasVR || item.hasVR,
+                      vrUrl: media.vrUrl || item.vrUrl,
+                    }
+                  : item,
+              ),
+            };
+            saveState(state);
+            property = getPropertyDetail(state, id, clientId) || property;
+          }
+        } catch (error) {
+          console.warn(`[property-media] ${id}: ${error.message}`);
+        }
+      }
+
       sendJson(res, 200, property);
       return;
     }

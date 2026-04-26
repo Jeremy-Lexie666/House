@@ -1,7 +1,21 @@
 <view class="container" wx:if="{{property}}">
   <view class="detail-shell">
   <view class="panel media-panel">
-    <swiper class="media-swiper" indicator-dots="true" autoplay="false" circular="true">
+    <swiper class="media-swiper" indicator-dots="true" autoplay="false" circular="true" wx:if="{{property.mediaImages.length}}">
+      <block wx:for="{{property.mediaImages}}" wx:key="*this">
+        <swiper-item>
+          <view class="media-image-card" bindtap="previewImage" data-url="{{item}}">
+            <image class="media-image" src="{{item}}" mode="aspectFill"></image>
+            <view class="media-top row between">
+              <view class="media-badge">{{property.source}}</view>
+              <view class="media-count">{{index + 1}} / {{property.mediaImages.length}}</view>
+            </view>
+            <view class="media-hint">点击查看大图</view>
+          </view>
+        </swiper-item>
+      </block>
+    </swiper>
+    <swiper class="media-swiper" indicator-dots="true" autoplay="false" circular="true" wx:else>
       <block wx:for="{{property.mediaLabels}}" wx:key="*this">
         <swiper-item>
           <view class="media-card">
@@ -74,4 +88,8 @@
     </button>
   </view>
   </view>
+</view>
+
+<view class="container" wx:elif="{{loading}}">
+  <view class="detail-loading">正在加载房源详情...</view>
 </view>

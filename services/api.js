@@ -70,6 +70,7 @@ function refreshFeed() {
 function getProperty(id) {
   return request({
     url: `/api/property/${id}`,
+    timeout: 30000,
   });
 }
 

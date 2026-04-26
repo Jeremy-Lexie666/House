@@ -4,6 +4,7 @@ const { formatArea, formatCurrencyWan, formatUnitPrice } = require("../../utils/
 Page({
   data: {
     property: null,
+    loading: true,
   },
 
   onLoad(options) {
@@ -11,9 +12,11 @@ Page({
   },
 
   async onShow() {
+    this.setData({ loading: true });
     try {
       const property = await getProperty(this.propertyId);
       const isSample = Boolean(property.generated);
+      const mediaImages = (property.mediaImages || []).filter((url) => url && !/blank\.gif/i.test(url));
       this.setData({
         property: {
           ...property,
@@ -21,6 +24,8 @@ Page({
           totalLabel: formatCurrencyWan(property.totalPriceWan),
           unitLabel: formatUnitPrice(property.unitPrice),
           areaLabel: formatArea(property.area),
+          mediaImages,
+          imageCount: mediaImages.length || property.imageCount || 0,
           dataLabel: isSample ? "示例数据" : "真实抓取",
           dataClassName: isSample ? "detail-data-badge-sample" : "detail-data-badge-real",
           related: property.related.map((item) => ({
@@ -34,7 +39,23 @@ Page({
         title: "房源加载失败",
         icon: "none",
       });
+    } finally {
+      this.setData({ loading: false });
     }
+  },
+
+  previewImage(event) {
+    const { property } = this.data;
+    const current = event.currentTarget.dataset.url;
+    const urls = (property && property.mediaImages) || [];
+    if (!urls.length || !current) {
+      return;
+    }
+
+    wx.previewImage({
+      current,
+      urls,
+    });
   },
 
   copyLink() {

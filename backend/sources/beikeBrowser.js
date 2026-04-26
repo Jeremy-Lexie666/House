@@ -192,6 +192,42 @@ function mapBrowserProperty(item, watchItem, now, communityUrl, listingUrl) {
   };
 }
 
+function normalizeImageUrl(url = "") {
+  const value = String(url || "").trim();
+  if (!value) {
+    return "";
+  }
+  if (value.startsWith("//")) {
+    return `https:${value}`;
+  }
+  if (value.startsWith("/")) {
+    return `https://sz.ke.com${value}`;
+  }
+  return value;
+}
+
+function isLikelyMediaImage(url = "") {
+  const value = normalizeImageUrl(url);
+  if (!/^https?:\/\//i.test(value)) {
+    return false;
+  }
+
+  if (
+    /blank\.gif|captcha|favicon|logo|avatar|sprite|icon|default|headimg|broker|erweima|qrcode/i.test(value)
+  ) {
+    return false;
+  }
+
+  return /\.(?:jpg|jpeg|png|webp)(?:[?#].*)?$/i.test(value);
+}
+
+function extractImageUrlsFromHtml(html = "") {
+  const matches = String(html || "").match(/(?:https?:)?\/\/[^"'\\\s>]+\.(?:jpg|jpeg|png|webp)(?:\?[^"'\\\s>]*)?/gi) || [];
+  return matches
+    .map((item) => normalizeImageUrl(item))
+    .filter((item) => item && isLikelyMediaImage(item));
+}
+
 async function extractListingCards(page) {
   return page.evaluate(() => {
     const items = Array.from(document.querySelectorAll("ul.sellListContent > li.clear"));
@@ -221,6 +257,75 @@ async function extractListingCards(page) {
       };
     });
   });
+}
+
+async function extractDetailMedia(page) {
+  await page.waitForTimeout(1500);
+
+  const domMedia = await page.evaluate(() => {
+    const sources = [];
+
+    const append = (value) => {
+      if (value) {
+        sources.push(String(value));
+      }
+    };
+
+    Array.from(document.querySelectorAll("img")).forEach((img) => {
+      append(img.currentSrc);
+      append(img.src);
+      append(img.getAttribute("data-src"));
+      append(img.getAttribute("data-original"));
+      append(img.getAttribute("data-lazy"));
+      append(img.getAttribute("data-lj-lazy"));
+    });
+
+    Array.from(document.querySelectorAll("[style*='background-image']")).forEach((node) => {
+      const style = node.getAttribute("style") || "";
+      const matched = style.match(/url\((['"]?)(.*?)\1\)/i);
+      if (matched && matched[2]) {
+        append(matched[2]);
+      }
+    });
+
+    const vrLink =
+      document.querySelector("a[href*='vr']")?.href ||
+      document.querySelector("a[title*='VR']")?.href ||
+      "";
+
+    return {
+      images: sources,
+      hasVR: Boolean(
+        vrLink ||
+          document.querySelector("[class*='vr']") ||
+          Array.from(document.querySelectorAll("a, span, div")).some((node) =>
+            /VR看房|VR房源|VR/.test((node.textContent || "").trim()),
+          ),
+      ),
+      vrUrl: vrLink,
+    };
+  });
+
+  const htmlMedia = extractImageUrlsFromHtml(await page.content());
+  const merged = [...domMedia.images, ...htmlMedia]
+    .map((item) => normalizeImageUrl(item))
+    .filter((item) => isLikelyMediaImage(item));
+
+  const seen = new Set();
+  const mediaImages = merged.filter((item) => {
+    if (seen.has(item)) {
+      return false;
+    }
+    seen.add(item);
+    return true;
+  });
+
+  return {
+    mediaImages,
+    imageCount: mediaImages.length,
+    hasVR: domMedia.hasVR,
+    vrUrl: normalizeImageUrl(domMedia.vrUrl),
+  };
 }
 
 async function waitForAccessReady(page, timeoutMs = 180000) {
@@ -310,6 +415,50 @@ async function scrapeBeikeWatchWithBrowser(watchItem, now, options = {}) {
   }
 }
 
+async function scrapeBeikePropertyMediaWithBrowser(property, options = {}) {
+  if (!property || !property.detailUrl) {
+    return {
+      mediaImages: [],
+      imageCount: 0,
+      hasVR: Boolean(property && property.hasVR),
+      vrUrl: property && property.vrUrl ? property.vrUrl : "",
+    };
+  }
+
+  const session = await openBeikeSession(options);
+  const { context } = session;
+
+  try {
+    await applySessionCookies(context, options);
+    const page = await getPrimaryPage(context);
+    await page.goto(property.detailUrl, {
+      waitUntil: "domcontentloaded",
+      timeout: options.timeoutMs || 30000,
+    });
+
+    let html = await page.content();
+    if (detectBlocked(html) || /hip\.ke\.com\/captcha/.test(page.url())) {
+      throw new Error("贝壳详情页需要重新验证，暂时无法抓取图片");
+    }
+
+    if (detectLoginRequired(page.url(), html)) {
+      throw new Error("贝壳详情页需要登录，暂时无法抓取图片");
+    }
+
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => {
+      window.scrollTo(0, Math.min(window.innerHeight * 2, document.body.scrollHeight));
+    });
+
+    return extractDetailMedia(page);
+  } finally {
+    await session.close();
+  }
+}
+
 async function initBeikeBrowserSession(options = {}) {
   const session = await openBeikeSession({
     ...options,
@@ -337,5 +486,6 @@ async function initBeikeBrowserSession(options = {}) {
 module.exports = {
   initBeikeBrowserSession,
   loadCookieFile,
+  scrapeBeikePropertyMediaWithBrowser,
   scrapeBeikeWatchWithBrowser,
 };
