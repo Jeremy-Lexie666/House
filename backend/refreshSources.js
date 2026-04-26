@@ -50,6 +50,7 @@ async function refreshStateWithSources(state) {
       if (config.beikeBrowserEnabled) {
         result = await scrapeBeikeWatchWithBrowser(baseWatchItem, now, {
           headless: config.beikeBrowserHeadless,
+          cdpUrl: config.beikeBrowserCdpUrl,
           userDataDir: config.beikeBrowserSessionDir,
           cookiesPath: config.beikeCookiesPath,
           executablePath: config.beikeChromePath,

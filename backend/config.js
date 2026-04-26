@@ -53,6 +53,7 @@ const config = {
   autoRefreshMinute: toNumber(process.env.AUTO_REFRESH_MINUTE, 30),
   beikeBrowserEnabled: toBoolean(process.env.BEIKE_BROWSER_ENABLED, NODE_ENV !== "production"),
   beikeBrowserHeadless: toBoolean(process.env.BEIKE_BROWSER_HEADLESS, NODE_ENV === "production"),
+  beikeBrowserCdpUrl: process.env.BEIKE_BROWSER_CDP_URL || "",
   beikeBrowserSessionDir:
     process.env.BEIKE_BROWSER_SESSION_DIR ||
     path.join(__dirname, "data", "browser-session", "beike"),

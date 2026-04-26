@@ -34,6 +34,34 @@ async function launchBeikeContext(options = {}) {
   });
 }
 
+async function openBeikeSession(options = {}) {
+  const cdpUrl = options.cdpUrl || process.env.BEIKE_BROWSER_CDP_URL || "";
+
+  if (cdpUrl) {
+    const browser = await chromium.connectOverCDP(cdpUrl);
+    const context = browser.contexts()[0];
+    if (!context) {
+      await browser.close();
+      throw new Error("未找到可复用的贝壳浏览器上下文，请确认远程调试 Chrome 已启动");
+    }
+
+    return {
+      context,
+      async close() {
+        await browser.close();
+      },
+    };
+  }
+
+  const context = await launchBeikeContext(options);
+  return {
+    context,
+    async close() {
+      await context.close();
+    },
+  };
+}
+
 function loadCookieFile(cookiesPath = "") {
   if (!cookiesPath || !fs.existsSync(cookiesPath)) {
     return [];
@@ -222,7 +250,8 @@ async function scrapeBeikeWatchWithBrowser(watchItem, now, options = {}) {
   const sourceUrl = watchItem.sourceUrl || (await resolveBeikeCommunityUrl(watchItem));
   const communityUrl = normalizeBeikeCommunityUrl(sourceUrl);
   const listingUrl = toBeikeListingUrl(sourceUrl);
-  const context = await launchBeikeContext(options);
+  const session = await openBeikeSession(options);
+  const { context } = session;
 
   try {
     await applySessionCookies(context, options);
@@ -276,15 +305,16 @@ async function scrapeBeikeWatchWithBrowser(watchItem, now, options = {}) {
       },
     };
   } finally {
-    await context.close();
+    await session.close();
   }
 }
 
 async function initBeikeBrowserSession(options = {}) {
-  const context = await launchBeikeContext({
+  const session = await openBeikeSession({
     ...options,
     headless: false,
   });
+  const { context } = session;
 
   try {
     await applySessionCookies(context, options);
@@ -299,7 +329,7 @@ async function initBeikeBrowserSession(options = {}) {
       throw new Error("初始化贝壳浏览器会话失败：请在打开的浏览器里完成登录/验证后重试");
     }
   } finally {
-    await context.close();
+    await session.close();
   }
 }
 
