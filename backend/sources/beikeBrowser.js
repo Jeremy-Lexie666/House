@@ -212,13 +212,39 @@ function isLikelyMediaImage(url = "") {
     return false;
   }
 
+  if (/api\.map\.baidu\.com|webmap0\.bdimg\.com/i.test(value)) {
+    return false;
+  }
+
   if (
-    /blank\.gif|captcha|favicon|logo|avatar|sprite|icon|default|headimg|broker|erweima|qrcode/i.test(value)
+    /blank\.gif|captcha|favicon|logo|avatar|sprite|icon|default|headimg|broker|erweima|qrcode|beian|partner\/|agent-sj-sdk|appindexconf|ehr-personnel|im-chart|statics\/images|indoor_exit|addrPage|mapctrls|markers_new_ie6|panorama|geolocation-control|\/PC\/|beike\/beike\//i.test(
+      value,
+    )
   ) {
     return false;
   }
 
-  return /\.(?:jpg|jpeg|png|webp)(?:[?#].*)?$/i.test(value);
+  if (!/\.(?:jpg|jpeg|png|webp)(?:[?#].*)?$/i.test(value)) {
+    return false;
+  }
+
+  return /(inspection|hdic|vrlab-image|appro\/group|ke-image\.ljcdn\.com|image\d\.ljcdn\.com)/i.test(
+    value,
+  );
+}
+
+function getMediaPriority(url = "") {
+  const value = normalizeImageUrl(url);
+  if (/vrlab-image/i.test(value)) {
+    return 4;
+  }
+  if (/inspection|hdic-frame|hdic-resblock/i.test(value)) {
+    return 3;
+  }
+  if (/appro\/group/i.test(value)) {
+    return 2;
+  }
+  return 1;
 }
 
 function extractImageUrlsFromHtml(html = "") {
@@ -318,7 +344,9 @@ async function extractDetailMedia(page) {
     }
     seen.add(item);
     return true;
-  });
+  })
+    .sort((a, b) => getMediaPriority(b) - getMediaPriority(a))
+    .slice(0, 12);
 
   return {
     mediaImages,
