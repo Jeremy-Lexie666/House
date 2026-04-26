@@ -368,6 +368,86 @@ function deleteWatchItem(state, id, clientId = "") {
   return nextState;
 }
 
+function applyWatchSyncResult(state, payload) {
+  const nextState = clone(state);
+  const now = payload.syncedAt || formatNow();
+  const normalizedClientId = normalizeClientId(payload.clientId);
+  const shouldReplaceProperties = payload.syncStatus !== "error";
+  const targetWatch = nextState.watchlist.find(
+    (item) => item.id === payload.watchId && normalizeClientId(item.clientId) === normalizedClientId,
+  );
+
+  if (!targetWatch) {
+    const error = new Error("未找到需要写回结果的关注项");
+    error.code = "WATCH_NOT_FOUND";
+    throw error;
+  }
+
+  if (shouldReplaceProperties) {
+    nextState.properties = nextState.properties.filter(
+      (item) =>
+        !(
+          normalizeClientId(item.clientId) === normalizedClientId &&
+          (item.watchId === payload.watchId || item.generatedWatchId === payload.watchId)
+        ),
+    );
+
+    if (Array.isArray(payload.properties) && payload.properties.length) {
+      nextState.properties.push(
+        ...payload.properties.map((item) => ({
+          ...item,
+          watchId: payload.watchId,
+          clientId: normalizedClientId,
+          generated: false,
+          updatedAt: item.updatedAt || now,
+        })),
+      );
+    }
+  }
+
+  nextState.watchlist = nextState.watchlist.map((item) => {
+    if (!(item.id === payload.watchId && normalizeClientId(item.clientId) === normalizedClientId)) {
+      return item;
+    }
+
+    return {
+      ...item,
+      sourceType: payload.sourceType || item.sourceType || "beike",
+      sourceUrl: payload.sourceUrl || item.sourceUrl || "",
+      syncStatus: payload.syncStatus || "success",
+      syncError: payload.syncError || "",
+      lastSyncedAt: now,
+      communityName: payload.communityName || item.communityName,
+      district: payload.district || item.district,
+      updatedAt: now,
+    };
+  });
+
+  nextState.lastRefreshedAt = now;
+  return ensureWatchCoverage(nextState);
+}
+
+function markClientWatchlistPending(state, clientId = "") {
+  const nextState = clone(state);
+  const now = formatNow();
+
+  nextState.watchlist = nextState.watchlist.map((item) => {
+    if (!watchBelongsToClient(item, clientId)) {
+      return item;
+    }
+
+    return {
+      ...item,
+      syncStatus: "pending",
+      syncError: "",
+      updatedAt: now,
+    };
+  });
+
+  nextState.lastRefreshedAt = now;
+  return nextState;
+}
+
 function refreshState(state) {
   const nextState = ensureWatchCoverage(state);
   const now = formatNow();
@@ -378,6 +458,7 @@ function refreshState(state) {
 }
 
 module.exports = {
+  applyWatchSyncResult,
   deleteWatchItem,
   dedupeState,
   ensureWatchCoverage,
@@ -391,6 +472,7 @@ module.exports = {
   isLooseMatchedProperty,
   matchesWatchItem,
   migrateLegacyOwnership,
+  markClientWatchlistPending,
   propertyBelongsToClient,
   refreshState,
   upsertWatchItem,

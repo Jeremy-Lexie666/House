@@ -33,6 +33,10 @@ function toSeedMode(nodeEnv, explicitMode) {
   return "empty";
 }
 
+function toSyncMode(value) {
+  return value === "worker" ? "worker" : "server";
+}
+
 function resolveChromePath() {
   const matchedPath = DEFAULT_CHROME_PATHS.find((candidate) => fs.existsSync(candidate));
   return matchedPath || DEFAULT_CHROME_PATHS[0] || "";
@@ -51,6 +55,8 @@ const config = {
   autoRefreshEnabled: process.env.AUTO_REFRESH_ENABLED === "true",
   autoRefreshHour: toNumber(process.env.AUTO_REFRESH_HOUR, 0),
   autoRefreshMinute: toNumber(process.env.AUTO_REFRESH_MINUTE, 30),
+  syncMode: toSyncMode(process.env.SYNC_MODE),
+  internalSyncToken: process.env.INTERNAL_SYNC_TOKEN || "",
   beikeBrowserEnabled: toBoolean(process.env.BEIKE_BROWSER_ENABLED, NODE_ENV !== "production"),
   beikeBrowserHeadless: toBoolean(process.env.BEIKE_BROWSER_HEADLESS, NODE_ENV === "production"),
   beikeBrowserCdpUrl: process.env.BEIKE_BROWSER_CDP_URL || "",

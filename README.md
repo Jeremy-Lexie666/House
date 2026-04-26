@@ -171,6 +171,35 @@ AUTO_REFRESH_MINUTE=30
 - 手动点击刷新和自动定时刷新共用同一条抓取链路
 - 当纯 HTTP 请求撞上贝壳验证码时，可选回退到本地 Chrome 浏览器会话抓取
 
+## 更稳的抓取架构：本地 worker + 云端展示
+
+如果贝壳在阿里云服务器上频繁触发验证码，推荐改成：
+
+- 阿里云后端只负责：
+  - 小程序 API
+  - 数据存储
+  - 给体验成员展示结果
+- 你自己本地常开机器上的 worker 负责：
+  - 登录贝壳
+  - 定时抓取关注小区
+  - 把结果回传给云端
+
+最小改造版已经在代码里预留好了：
+
+- 云端开启：
+  - `SYNC_MODE=worker`
+  - `INTERNAL_SYNC_TOKEN=<一段长随机串>`
+- 本地机器执行：
+
+```bash
+npm run beike:login
+WORKER_API_BASE_URL=https://api.4567l.com \
+INTERNAL_SYNC_TOKEN=<一段长随机串> \
+npm run worker:sync
+```
+
+这样前端基本不用大改，但贝壳抓取会从“机房 IP”切回“住宅网络 + 真实浏览器会话”，通常会稳很多。
+
 如果你准备用服务器常驻运行，项目里也已经带了：
 
 - [ecosystem.config.cjs](/Users/jeremy/Desktop/Vibe%20Coding/Codex/房子/ecosystem.config.cjs)

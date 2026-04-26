@@ -25,6 +25,8 @@ See [.env.example](/Users/jeremy/Desktop/Vibe%20Coding/Codex/房子/.env.example
 - `AUTO_REFRESH_ENABLED`: whether to run scheduled nightly refresh
 - `AUTO_REFRESH_HOUR`: daily refresh hour, default `0`
 - `AUTO_REFRESH_MINUTE`: daily refresh minute, default `30`
+- `SYNC_MODE`: `server` or `worker`
+- `INTERNAL_SYNC_TOKEN`: shared secret for a local worker to pull watch tasks and push sync results
 
 Recommended production startup:
 
@@ -93,3 +95,49 @@ Endpoints:
 - `PUT /api/watchlist/:id`
 - `DELETE /api/watchlist/:id`
 - `GET /api/property/:id`
+
+## Local worker mode
+
+If Beike scraping is unstable on a cloud server, you can move the actual scraping onto a local always-on machine and keep the cloud API only for storage and mini-program traffic.
+
+Cloud API setup:
+
+```bash
+SYNC_MODE=worker
+INTERNAL_SYNC_TOKEN=replace-with-a-long-random-token
+```
+
+When `SYNC_MODE=worker`:
+
+- `POST /api/refresh` only marks the current user's watches as `pending`
+- creating or editing a watch also marks it as `pending`
+- the cloud backend no longer tries to scrape Beike directly
+
+Worker-only endpoints:
+
+- `GET /api/internal/watchlist`
+- `POST /api/internal/sync-results`
+
+Both require header:
+
+```text
+X-Internal-Sync-Token: <INTERNAL_SYNC_TOKEN>
+```
+
+Run the local worker on your own Mac / PC after completing one local Beike login:
+
+```bash
+npm run beike:login
+WORKER_API_BASE_URL=https://api.4567l.com \
+INTERNAL_SYNC_TOKEN=replace-with-a-long-random-token \
+BEIKE_BROWSER_HEADLESS=true \
+npm run worker:sync
+```
+
+For a single test cycle:
+
+```bash
+WORKER_API_BASE_URL=https://api.4567l.com \
+INTERNAL_SYNC_TOKEN=replace-with-a-long-random-token \
+npm run worker:sync:once
+```

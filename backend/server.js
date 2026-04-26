@@ -2,12 +2,14 @@ const http = require("http");
 const { URL } = require("url");
 const { config } = require("./config");
 const {
+  applyWatchSyncResult,
   ensureWatchCoverage,
   deleteWatchItem,
   getHomeFeed,
   getPropertyDetail,
   getWatchItem,
   getWatchlist,
+  markClientWatchlistPending,
   migrateLegacyOwnership,
   upsertWatchItem,
 } = require("../shared/houseDomain");
@@ -37,6 +39,13 @@ function sendJson(res, statusCode, payload) {
     "Access-Control-Allow-Headers": "Content-Type, X-House-Watch-Client-Id",
   });
   res.end(JSON.stringify(payload));
+}
+
+function isInternalAuthorized(req) {
+  if (!config.internalSyncToken) {
+    return false;
+  }
+  return String(req.headers["x-internal-sync-token"] || "").trim() === config.internalSyncToken;
 }
 
 function readBody(req) {
@@ -100,8 +109,46 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/api/internal/watchlist") {
+      if (!isInternalAuthorized(req)) {
+        sendJson(res, 401, { error: "Unauthorized" });
+        return;
+      }
+
+      if (req.method === "GET") {
+        const state = ensureWatchCoverage(loadState());
+        saveState(state);
+        sendJson(res, 200, {
+          lastRefreshedAt: state.lastRefreshedAt || "",
+          watchlist: state.watchlist,
+        });
+        return;
+      }
+
+    }
+
+    if (pathname === "/api/internal/sync-results") {
+      if (!isInternalAuthorized(req)) {
+        sendJson(res, 401, { error: "Unauthorized" });
+        return;
+      }
+
+      if (req.method === "POST") {
+        const body = await readBody(req);
+        const nextState = applyWatchSyncResult(ensureWatchCoverage(loadState()), body);
+        saveState(nextState);
+        sendJson(res, 200, { success: true });
+        return;
+      }
+    }
+
     if (req.method === "POST" && pathname === "/api/refresh") {
-      const nextState = await refreshStateWithSources(loadHydratedState(clientId), clientId);
+      let nextState;
+      if (config.syncMode === "worker") {
+        nextState = markClientWatchlistPending(loadHydratedState(clientId), clientId);
+      } else {
+        nextState = await refreshStateWithSources(loadHydratedState(clientId), clientId);
+      }
       saveState(nextState);
       sendJson(res, 200, getHomeFeed(nextState, clientId));
       return;
@@ -136,7 +183,10 @@ const server = http.createServer(async (req, res) => {
         ...body,
         sourceType: body.sourceType || inferSourceType(body.sourceUrl) || "beike",
       }, clientId);
-      const refreshedState = await refreshStateWithSources(result.state, clientId);
+      const refreshedState =
+        config.syncMode === "worker"
+          ? markClientWatchlistPending(result.state, clientId)
+          : await refreshStateWithSources(result.state, clientId);
       saveState(refreshedState);
       const refreshedItem = getWatchItem(refreshedState, result.item.id, clientId) || result.item;
       sendJson(res, 201, refreshedItem);
@@ -172,7 +222,10 @@ const server = http.createServer(async (req, res) => {
           sourceType: body.sourceType || inferSourceType(body.sourceUrl) || "beike",
           id,
         }, clientId);
-        const refreshedState = await refreshStateWithSources(result.state, clientId);
+        const refreshedState =
+          config.syncMode === "worker"
+            ? markClientWatchlistPending(result.state, clientId)
+            : await refreshStateWithSources(result.state, clientId);
         saveState(refreshedState);
         const refreshedItem = getWatchItem(refreshedState, result.item.id, clientId) || result.item;
         sendJson(res, 200, refreshedItem);
@@ -254,7 +307,7 @@ server.listen(config.port, config.host, () => {
 });
 
 startAutoRefresh({
-  enabled: config.autoRefreshEnabled,
+  enabled: config.autoRefreshEnabled && config.syncMode !== "worker",
   hour: config.autoRefreshHour,
   minute: config.autoRefreshMinute,
 });
